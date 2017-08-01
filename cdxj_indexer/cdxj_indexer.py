@@ -4,7 +4,7 @@ from warcio.warcwriter import BufferWARCWriter
 from warcio.archiveiterator import ArchiveIterator
 
 from argparse import ArgumentParser, RawTextHelpFormatter
-from cdx_indexer.postquery import append_post_query
+from cdxj_indexer.postquery import append_post_query
 
 from io import BytesIO
 

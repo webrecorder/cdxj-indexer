@@ -36,7 +36,11 @@ setup(
         ],
     install_requires=[
         'warcio',
+        'surt',
         ],
+    dependency_links=[
+        '-e git+https://github.com/webrecorder/warcio.git@develop#egg=warcio-1.4.0'
+    ],
     zip_safe=True,
     entry_points="""
         [console_scripts]

@@ -2,7 +2,7 @@ import os
 import sys
 from io import StringIO, BytesIO
 
-from cdx_indexer.cdx_indexer import write_cdx_index, main
+from cdxj_indexer.cdxj_indexer import write_cdx_index, main
 
 import pkg_resources
 
