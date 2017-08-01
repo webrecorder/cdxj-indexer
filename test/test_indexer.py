@@ -1,6 +1,11 @@
 import os
 import sys
-from io import StringIO, BytesIO
+from io import BytesIO
+
+try:
+    from StringIO import StringIO
+except ImportError:  #pragma: no cover
+    from io import StringIO
 
 from cdxj_indexer.cdxj_indexer import write_cdx_index, main
 

@@ -13,7 +13,7 @@ os:
 sudo: false
 
 install:
-  - pip install -e git+https://github.com/webrecorder/warcio.git@develop#egg=warcio-1.4.0
+  - pip install -e git+https://github.com/webrecorder/warcio.git@master#egg=warcio-1.4.0
   - python setup.py install
   - pip install coverage pytest-cov coveralls
 

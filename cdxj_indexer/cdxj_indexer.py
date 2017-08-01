@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+
 from warcio.indexer import Indexer
 from warcio.timeutils import iso_date_to_timestamp
 from warcio.warcwriter import BufferWARCWriter
