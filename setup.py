@@ -18,21 +18,21 @@ class PyTest(TestCommand):
         import pytest
         import sys
         import os
-        errcode = pytest.main(['--doctest-module', './cdx_indexer', '--cov', 'cdx_indexer', '-v', 'test/'])
+        errcode = pytest.main(['--doctest-module', './cdxj_indexer', '--cov', 'cdxj_indexer', '-v', 'test/'])
         sys.exit(errcode)
 
 setup(
-    name='cdx_indexer',
+    name='cdxj_indexer',
     version=__version__,
     author='Ilya Kreymer',
     author_email='ikreymer@gmail.com',
     license='Apache 2.0',
     packages=find_packages(),
-    url='https://github.com/webrecorder/cdx_indexer',
-    description='CDX(J) Indexer for WARC and ARC files',
+    url='https://github.com/webrecorder/cdxj_indexer',
+    description='CDXJ Indexer for WARC and ARC files',
     long_description=open('README.rst').read(),
     provides=[
-        'cdx_indexer',
+        'cdxj_indexer',
         ],
     install_requires=[
         'warcio',
@@ -40,7 +40,7 @@ setup(
     zip_safe=True,
     entry_points="""
         [console_scripts]
-        cdx-indexer=cdx_indexer.cdx_indexer:main
+        cdxj-indexer=cdxj_indexer.cdxj_indexer:main
     """,
     cmdclass={'test': PyTest},
     test_suite='',
