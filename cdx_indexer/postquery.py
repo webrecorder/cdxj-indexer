@@ -8,90 +8,86 @@ import cgi
 
 
 # ============================================================================
-class PostQueryExtractor(object):
-    def __init__(self, method, mime, length, stream,
-                       buffered_stream=None,
-                       environ=None):
-        """
-        Extract a url-encoded form POST from stream
-        content length, return None
-        Attempt to decode application/x-www-form-urlencoded or multipart/*,
-        otherwise read whole block and b64encode
-        """
-        self.post_query = b''
+def append_post_query(req, resp):
+    len_ = req.http_headers.get_header('Content-Length')
+    content_type = req.http_headers.get_header('Content-Type')
+    stream = req.buffered_stream
+    stream.seek(0)
 
-        if method.upper() != 'POST':
-            return
+    post_query = post_query_extract(content_type, len_, stream)
 
-        try:
-            length = int(length)
-        except (ValueError, TypeError):
-            return
+    if not post_query:
+        return
 
-        if length <= 0:
-            return
+    url = req.rec_headers.get_header('WARC-Target-URI')
 
-        post_query = b''
+    if '?' not in url:
+        url += '?'
+    else:
+        url += '&'
 
-        while length > 0:
-            buff = stream.read(length)
-            length -= len(buff)
+    url += post_query
+    return url
 
-            if not buff:
-                break
 
-            post_query += buff
+# ============================================================================
+def post_query_extract(mime, length, stream):
+    """
+    Extract a url-encoded form POST/PUT from stream
+    content length, return None
+    Attempt to decode application/x-www-form-urlencoded or multipart/*,
+    otherwise read whole block and b64encode
+    """
+    post_query = b''
 
-        if buffered_stream:
-            buffered_stream.write(post_query)
-            buffered_stream.seek(0)
+    try:
+        length = int(length)
+    except (ValueError, TypeError):
+        return
 
-        if not mime:
-            mime = ''
+    if length <= 0:
+        return
 
-        self.post_query = self._make_query(mime)
+    while length > 0:
+        buff = stream.read(length)
+        length -= len(buff)
 
-    def _make_query(self, mime, post_query):
-        if mime.startswith('application/x-www-form-urlencoded'):
-            post_query = to_native_str(post_query)
-            post_query = unquote_plus(post_query)
+        if not buff:
+            break
 
-        elif mime.startswith('multipart/'):
-            env = {'REQUEST_METHOD': 'POST',
-                   'CONTENT_TYPE': mime,
-                   'CONTENT_LENGTH': len(post_query)}
+        post_query += buff
 
-            args = dict(fp=BytesIO(post_query),
-                        environ=env,
-                        keep_blank_values=True)
+    if not mime:
+        mime = ''
 
-            if six.PY3:
-                args['encoding'] = 'utf-8'
+    if mime.startswith('application/x-www-form-urlencoded'):
+        post_query = to_native_str(post_query)
+        post_query = unquote_plus(post_query)
 
-            data = cgi.FieldStorage(**args)
+    elif mime.startswith('multipart/'):
+        env = {'REQUEST_METHOD': 'POST',
+               'CONTENT_TYPE': mime,
+               'CONTENT_LENGTH': len(post_query)}
 
-            values = []
-            for item in data.list:
-                values.append((item.name, item.value))
+        args = dict(fp=BytesIO(post_query),
+                    environ=env,
+                    keep_blank_values=True)
 
-            post_query = urlencode(values, True)
+        if six.PY3:
+            args['encoding'] = 'utf-8'
 
-        else:
-            post_query = base64.b64encode(post_query)
-            post_query = to_native_str(post_query)
-            post_query = '__wb_post_data=' + post_query
+        data = cgi.FieldStorage(**args)
 
-        return post_query
+        values = []
+        for item in data.list:
+            values.append((item.name, item.value))
 
-    def append_post_query(self, url):
-        if not self.post_query:
-            return url
+        post_query = urlencode(values, True)
 
-        if '?' not in url:
-            url += '?'
-        else:
-            url += '&'
+    else:
+        post_query = base64.b64encode(post_query)
+        post_query = to_native_str(post_query)
+        post_query = '__warc_post_data=' + post_query
 
-        url += self.post_query
-        return url
+    return post_query
 

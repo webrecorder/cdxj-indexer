@@ -6,10 +6,12 @@ from cdx_indexer.cdx_indexer import write_cdx_index, main
 
 import pkg_resources
 
-TEST_DIR = pkg_resources.resource_filename('warcio', '../test/data/')
+TEST_DIR = pkg_resources.resource_filename('warcio', os.path.join('..', 'test', 'data'))
 
 from contextlib import contextmanager
 
+
+# ============================================================================
 @contextmanager
 def patch_stdout():
     buff = StringIO()
@@ -76,6 +78,9 @@ com,example)/ 20170306040348 {"url": "http://example.com/", "mime": "unk", "dige
 """
         assert res == exp
 
+        res = self.index_file('example.warc.gz', include_all=True, post_append=True)
+        assert res == exp
+
     def test_arc_cdxj(self):
         res = self.index_file('example.arc')
         exp = """\
@@ -91,8 +96,25 @@ com,example)/ 20140401000000 http://example.com/ unk - 3I42H3S6NNFQ2MSVX7XZKYAYS
 com,example)/ 20140102000000 http://example.com/ unk - 3I42H3S6NNFQ2MSVX7XZKYAYSCX5QBYJ - - 59 202 bad.arc
 com,example)/ 20140401000000 http://example.com/ unk - 3I42H3S6NNFQ2MSVX7XZKYAYSCX5QBYJ - - 68 262 bad.arc
 """
-
         assert res == exp
+
+    def test_warc_post_query_append(self):
+        res = self.index_file('post-test.warc.gz', post_append=True)
+        exp = """\
+org,httpbin)/post?foo=bar&test=abc 20140610000859 {"url": "http://httpbin.org/post", "mime": "application/json", "status": "200", "digest": "M532K5WS4GY2H4OVZO6HRPOP47A7KDWU", "length": "720", "offset": "0", "filename": "post-test.warc.gz"}
+org,httpbin)/post?a=1&b=[]&c=3 20140610001151 {"url": "http://httpbin.org/post", "mime": "application/json", "status": "200", "digest": "M7YCTM7HS3YKYQTAWQVMQSQZBNEOXGU2", "length": "723", "offset": "1196", "filename": "post-test.warc.gz"}
+org,httpbin)/post?data=^&foo=bar 20140610001255 {"url": "http://httpbin.org/post?foo=bar", "mime": "application/json", "status": "200", "digest": "B6E5P6JUZI6UPDTNO4L2BCHMGLTNCUAJ", "length": "723", "offset": "2395", "filename": "post-test.warc.gz"}
+"""
+        assert res == exp
+
+        res = self.index_file('post-test.warc.gz')
+        exp = """\
+org,httpbin)/post 20140610000859 {"url": "http://httpbin.org/post", "mime": "application/json", "status": "200", "digest": "M532K5WS4GY2H4OVZO6HRPOP47A7KDWU", "length": "720", "offset": "0", "filename": "post-test.warc.gz"}
+org,httpbin)/post 20140610001151 {"url": "http://httpbin.org/post", "mime": "application/json", "status": "200", "digest": "M7YCTM7HS3YKYQTAWQVMQSQZBNEOXGU2", "length": "723", "offset": "1196", "filename": "post-test.warc.gz"}
+org,httpbin)/post?foo=bar 20140610001255 {"url": "http://httpbin.org/post?foo=bar", "mime": "application/json", "status": "200", "digest": "B6E5P6JUZI6UPDTNO4L2BCHMGLTNCUAJ", "length": "723", "offset": "2395", "filename": "post-test.warc.gz"}
+"""
+        assert res == exp
+
     def test_cdxj_empty(self):
         output = StringIO()
 
@@ -109,7 +131,7 @@ com,example)/ 20140401000000 http://example.com/ unk - 3I42H3S6NNFQ2MSVX7XZKYAYS
 
         new_warc = BytesIO()
 
-        with open(TEST_DIR + 'example.warc.gz', 'rb') as fh:
+        with open(os.path.join(TEST_DIR, 'example.warc.gz'), 'rb') as fh:
             new_warc.write(empty_gzip_record)
             new_warc.write(fh.read())
             new_warc.write(empty_gzip_record)
