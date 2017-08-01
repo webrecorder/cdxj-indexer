@@ -120,6 +120,24 @@ org,httpbin)/post?foo=bar 20140610001255 {"url": "http://httpbin.org/post?foo=ba
 """
         assert res == exp
 
+    def test_warc_index_add_custom_fields(self):
+        res = self.index_file('example.warc.gz', fields='req.http:method,req.http:referer,http:date')
+
+        exp = """\
+com,example)/ 20170306040206 {"url": "http://example.com/", "mime": "text/html", "status": "200", "digest": "G7HRM7BGOKSKMSXZAHMUQTTV53QOFSMK", "length": "1228", "offset": "784", "filename": "example.warc.gz", "req.http:method": "GET", "referrer": "https://webrecorder.io/temp-MJFXHZ4S/temp/recording-session/record/http://example.com/", "http:date": "Mon, 06 Mar 2017 04:02:06 GMT"}
+com,example)/ 20170306040348 {"url": "http://example.com/", "mime": "warc/revisit", "status": "200", "digest": "G7HRM7BGOKSKMSXZAHMUQTTV53QOFSMK", "length": "585", "offset": "2538", "filename": "example.warc.gz", "http:date": "Mon, 06 Mar 2017 04:03:48 GMT"}
+"""
+        assert res == exp
+
+    def test_warc_index_url_only(self):
+        res = self.index_file('example.warc.gz', fields='url', replace_fields=True)
+
+        exp = """\
+com,example)/ 20170306040206 {"url": "http://example.com/"}
+com,example)/ 20170306040348 {"url": "http://example.com/"}
+"""
+        assert res == exp
+
     def test_cdxj_empty(self):
         output = StringIO()
 
