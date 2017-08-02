@@ -6,13 +6,14 @@ from warcio.warcwriter import BufferWARCWriter
 from warcio.archiveiterator import ArchiveIterator
 
 from argparse import ArgumentParser, RawTextHelpFormatter
-#from cdxj_indexer.postquery import append_post_query
+from cdxj_indexer.postquery import append_post_query
 
 from io import BytesIO
 
 import json
 import surt
 import logging
+import os
 
 
 # ============================================================================
@@ -42,20 +43,34 @@ class CDXJIndexer(Indexer):
         super(CDXJIndexer, self).__init__(fields, inputs, output)
         self.writer = None
 
-        self.include_all = opts.get('include_all', False)
+        self.curr_filename = None
         self.force_filename = opts.get('filename')
         self.post_append = opts.get('post_append')
+
+        self.write_records = opts.get('records')
+        if self.write_records == '*':
+            self.write_records = None
+        elif self.write_records:
+            self.write_records = self.write_records.split(',')
+        else:
+            self.write_records = self.WRITE_RECORDS
 
         self.collect_records = self.post_append or any(field.startswith('req.http:') for field in self.fields)
         self.record_parse = True
 
     def _parse_fields(self, opts):
-        if opts.get('replace_fields'):
+        add_fields = opts.get('replace_fields')
+
+        if add_fields:
+            replace = True
+        else:
+            add_fields = opts.get('fields')
+            replace = False
+
+        if replace:
             fields = ['warc-target-uri']
         else:
             fields = self.DEFAULT_FIELDS
-
-        add_fields = opts.get('fields')
 
         if add_fields:
             add_fields = add_fields.split(',')
@@ -79,8 +94,8 @@ class CDXJIndexer(Indexer):
 
             return value
 
-        if name == 'filename' and self.force_filename:
-            return self.force_filename
+        if name == 'filename':
+            return self.curr_filename
 
         if self.collect_records:
             if name == 'offset':
@@ -113,6 +128,8 @@ class CDXJIndexer(Indexer):
             return req.http_headers.get_header(name[9:])
 
     def process_one(self, input_, output, filename):
+        self.curr_filename = self.force_filename or os.path.basename(filename)
+
         it = self._create_record_iter(input_)
 
         self._write_header(output, filename)
@@ -122,8 +139,13 @@ class CDXJIndexer(Indexer):
         else:
             wrap_it = it
 
+        #if not self.collect_records and not self.fields_changed:
+        #    for record in wrap_it:
+        #        self.process_default_index_entry(it, record, filename, output)
+        #else:
         for record in wrap_it:
-            self.process_index_entry(it, record, filename, output)
+            if not self.write_records or record.rec_type in self.write_records:
+                self.process_index_entry(it, record, filename, output)
 
     def _get_digest(self, record, name):
         value = record.rec_headers.get(name)
@@ -139,9 +161,6 @@ class CDXJIndexer(Indexer):
         return value
 
     def _write_line(self, out, index, record, filename):
-        if not self.include_all and record.rec_type not in self.WRITE_RECORDS:
-            return
-
         url = index.get('url')
         if not url:
             logging.debug('No Url, Skipping: ' + str(index))
@@ -268,8 +287,6 @@ def main(args=None):
     parser.add_argument('inputs', nargs='+')
     parser.add_argument('-o', '--output')
 
-    parser.add_argument('-a', '--include_all', action='store_true')
-
     group = parser.add_mutually_exclusive_group()
     group.add_argument('-9', '--cdx09',
                         action='store_true')
@@ -278,10 +295,11 @@ def main(args=None):
                         action='store_true')
 
     group.add_argument('-f', '--fields')
+    group.add_argument('-rf', '--replace-fields')
+
+    parser.add_argument('-r', '--records')
 
     parser.add_argument('-p', '--post-append', action='store_true')
-
-    parser.add_argument('-r', '--replace-fields', action='store_true')
 
     cmd = parser.parse_args(args=args)
 

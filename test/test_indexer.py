@@ -74,7 +74,7 @@ com,example)/ 20170306040348 http://example.com/ warc/revisit 200 G7HRM7BGOKSKMS
         assert res == exp
 
     def test_warc_all_cdxj(self):
-        res = self.index_file('example.warc.gz', include_all=True)
+        res = self.index_file('example.warc.gz', records='*')
         exp = """\
 com,example)/ 20170306040206 {"url": "http://example.com/", "mime": "text/html", "status": "200", "digest": "G7HRM7BGOKSKMSXZAHMUQTTV53QOFSMK", "length": "1228", "offset": "784", "filename": "example.warc.gz"}
 com,example)/ 20170306040206 {"url": "http://example.com/", "digest": "3I42H3S6NNFQ2MSVX7XZKYAYSCX5QBYJ", "length": "526", "offset": "2012", "filename": "example.warc.gz"}
@@ -83,7 +83,7 @@ com,example)/ 20170306040348 {"url": "http://example.com/", "digest": "3I42H3S6N
 """
         assert res == exp
 
-        res = self.index_file('example.warc.gz', include_all=True, post_append=True)
+        res = self.index_file('example.warc.gz', records='*', post_append=True)
         assert res == exp
 
     def test_arc_cdxj(self):
@@ -130,7 +130,7 @@ com,example)/ 20170306040348 {"url": "http://example.com/", "mime": "warc/revisi
         assert res == exp
 
     def test_warc_index_url_only(self):
-        res = self.index_file('example.warc.gz', fields='url', replace_fields=True)
+        res = self.index_file('example.warc.gz', replace_fields='url')
 
         exp = """\
 com,example)/ 20170306040206 {"url": "http://example.com/"}
