@@ -11,7 +11,7 @@ from cdxj_indexer.cdxj_indexer import write_cdx_index, main
 
 import pkg_resources
 
-TEST_DIR = pkg_resources.resource_filename('warcio', os.path.join('..', 'test', 'data'))
+TEST_DIR = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'data')
 
 from contextlib import contextmanager
 
@@ -73,9 +73,19 @@ com,example)/ 20170306040348 http://example.com/ warc/revisit 200 G7HRM7BGOKSKMS
 """
         assert res == exp
 
-    def test_warc_all_cdxj(self):
-        res = self.index_file('example.warc.gz', records='*')
+    def test_warc_request_only(self):
+        res = self.index_file('example.warc.gz', records='request', fields='method')
         exp = """\
+com,example)/ 20170306040206 {"url": "http://example.com/", "digest": "3I42H3S6NNFQ2MSVX7XZKYAYSCX5QBYJ", "length": "526", "offset": "2012", "filename": "example.warc.gz", "method": "GET"}
+com,example)/ 20170306040348 {"url": "http://example.com/", "digest": "3I42H3S6NNFQ2MSVX7XZKYAYSCX5QBYJ", "length": "526", "offset": "3123", "filename": "example.warc.gz", "method": "GET"}
+"""
+        assert res == exp
+
+    def test_warc_all_cdxj(self):
+        res = self.index_file('example.warc.gz', records='all')
+        exp = """\
+- 20170306040353 {"mime": "application/warc-fields", "length": "353", "offset": "0", "filename": "example.warc.gz"}
+- 20170306040353 {"mime": "application/warc-fields", "length": "431", "offset": "353", "filename": "example.warc.gz"}
 com,example)/ 20170306040206 {"url": "http://example.com/", "mime": "text/html", "status": "200", "digest": "G7HRM7BGOKSKMSXZAHMUQTTV53QOFSMK", "length": "1228", "offset": "784", "filename": "example.warc.gz"}
 com,example)/ 20170306040206 {"url": "http://example.com/", "digest": "3I42H3S6NNFQ2MSVX7XZKYAYSCX5QBYJ", "length": "526", "offset": "2012", "filename": "example.warc.gz"}
 com,example)/ 20170306040348 {"url": "http://example.com/", "mime": "warc/revisit", "status": "200", "digest": "G7HRM7BGOKSKMSXZAHMUQTTV53QOFSMK", "length": "585", "offset": "2538", "filename": "example.warc.gz"}
@@ -83,7 +93,7 @@ com,example)/ 20170306040348 {"url": "http://example.com/", "digest": "3I42H3S6N
 """
         assert res == exp
 
-        res = self.index_file('example.warc.gz', records='*', post_append=True)
+        res = self.index_file('example.warc.gz', records='all', post_append=True)
         assert res == exp
 
     def test_arc_cdxj(self):
@@ -121,20 +131,32 @@ org,httpbin)/post?foo=bar 20140610001255 {"url": "http://httpbin.org/post?foo=ba
         assert res == exp
 
     def test_warc_index_add_custom_fields(self):
-        res = self.index_file('example.warc.gz', fields='req.http:method,req.http:referer,http:date')
+        res = self.index_file('example.warc.gz', fields='method,referrer,http:date')
 
         exp = """\
-com,example)/ 20170306040206 {"url": "http://example.com/", "mime": "text/html", "status": "200", "digest": "G7HRM7BGOKSKMSXZAHMUQTTV53QOFSMK", "length": "1228", "offset": "784", "filename": "example.warc.gz", "req.http:method": "GET", "referrer": "https://webrecorder.io/temp-MJFXHZ4S/temp/recording-session/record/http://example.com/", "http:date": "Mon, 06 Mar 2017 04:02:06 GMT"}
+com,example)/ 20170306040206 {"url": "http://example.com/", "mime": "text/html", "status": "200", "digest": "G7HRM7BGOKSKMSXZAHMUQTTV53QOFSMK", "length": "1228", "offset": "784", "filename": "example.warc.gz", "method": "GET", "referrer": "https://webrecorder.io/temp-MJFXHZ4S/temp/recording-session/record/http://example.com/", "http:date": "Mon, 06 Mar 2017 04:02:06 GMT"}
 com,example)/ 20170306040348 {"url": "http://example.com/", "mime": "warc/revisit", "status": "200", "digest": "G7HRM7BGOKSKMSXZAHMUQTTV53QOFSMK", "length": "585", "offset": "2538", "filename": "example.warc.gz", "http:date": "Mon, 06 Mar 2017 04:03:48 GMT"}
 """
         assert res == exp
 
-    def test_warc_index_url_only(self):
-        res = self.index_file('example.warc.gz', replace_fields='url')
+    def test_warc_index_custom_fields_1(self):
+        res = self.index_file('example.warc.gz', records='response,request,revisit', replace_fields='warc-type')
 
         exp = """\
-com,example)/ 20170306040206 {"url": "http://example.com/"}
-com,example)/ 20170306040348 {"url": "http://example.com/"}
+com,example)/ 20170306040206 {"warc-type": "response"}
+com,example)/ 20170306040206 {"warc-type": "request"}
+com,example)/ 20170306040348 {"warc-type": "revisit"}
+com,example)/ 20170306040348 {"warc-type": "request"}
+"""
+        assert res == exp
+
+    def test_Warc_index_custom_fields_2(self):
+        res = self.index_file('cc.warc.gz', records='all', replace_fields='method,mime,warc-type,date')
+
+        exp = """\
+org,commoncrawl)/ 20170722005011 {"method": "GET", "warc-type": "request"}
+org,commoncrawl)/ 20170722005011 {"method": "GET", "mime": "text/html", "warc-type": "response"}
+org,commoncrawl)/ 20170722005011 {"mime": "application/warc-fields", "warc-type": "metadata"}
 """
         assert res == exp
 

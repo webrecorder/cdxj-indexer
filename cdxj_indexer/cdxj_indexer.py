@@ -9,6 +9,7 @@ from argparse import ArgumentParser, RawTextHelpFormatter
 from cdxj_indexer.postquery import append_post_query
 
 from io import BytesIO
+from copy import copy
 
 import json
 import surt
@@ -22,7 +23,10 @@ class CDXJIndexer(Indexer):
                    'http:status': 'status',
                    'warc-payload-digest': 'digest',
                    'req.http:referer': 'referrer',
+                   'req.http:method': 'method',
                   }
+
+    inv_field_names = {k: v for v, k in field_names.items()}
 
     DEFAULT_FIELDS = ['warc-target-uri',
                       'mime',
@@ -33,7 +37,7 @@ class CDXJIndexer(Indexer):
                       'filename'
                      ]
 
-    WRITE_RECORDS = ['response', 'revisit', 'resource', 'metadata']
+    DEFAULT_RECORDS = ['response', 'revisit', 'resource', 'metadata']
 
     def __init__(self, output, inputs, opts=None):
         opts = opts or {}
@@ -48,12 +52,12 @@ class CDXJIndexer(Indexer):
         self.post_append = opts.get('post_append')
 
         self.write_records = opts.get('records')
-        if self.write_records == '*':
+        if self.write_records == 'all':
             self.write_records = None
         elif self.write_records:
             self.write_records = self.write_records.split(',')
         else:
-            self.write_records = self.WRITE_RECORDS
+            self.write_records = self.DEFAULT_RECORDS
 
         self.collect_records = self.post_append or any(field.startswith('req.http:') for field in self.fields)
         self.record_parse = True
@@ -62,20 +66,15 @@ class CDXJIndexer(Indexer):
         add_fields = opts.get('replace_fields')
 
         if add_fields:
-            replace = True
+            fields = []
         else:
             add_fields = opts.get('fields')
-            replace = False
-
-        if replace:
-            fields = ['warc-target-uri']
-        else:
-            fields = self.DEFAULT_FIELDS
+            fields = copy(self.DEFAULT_FIELDS)
 
         if add_fields:
             add_fields = add_fields.split(',')
             for field in add_fields:
-                fields.append(field)
+                fields.append(self.inv_field_names.get(field, field))
 
         return fields
 
@@ -139,10 +138,6 @@ class CDXJIndexer(Indexer):
         else:
             wrap_it = it
 
-        #if not self.collect_records and not self.fields_changed:
-        #    for record in wrap_it:
-        #        self.process_default_index_entry(it, record, filename, output)
-        #else:
         for record in wrap_it:
             if not self.write_records or record.rec_type in self.write_records:
                 self.process_index_entry(it, record, filename, output)
@@ -163,8 +158,7 @@ class CDXJIndexer(Indexer):
     def _write_line(self, out, index, record, filename):
         url = index.get('url')
         if not url:
-            logging.debug('No Url, Skipping: ' + str(index))
-            return
+            url = record.rec_headers.get('WARC-Target-URI')
 
         dt = record.rec_headers.get('WARC-Date')
 
