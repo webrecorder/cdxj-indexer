@@ -77,9 +77,9 @@ com,example)/ 20170306040348 http://example.com/ warc/revisit 200 G7HRM7BGOKSKMS
         res = self.index_file('example.warc.gz', include_all=True)
         exp = """\
 com,example)/ 20170306040206 {"url": "http://example.com/", "mime": "text/html", "status": "200", "digest": "G7HRM7BGOKSKMSXZAHMUQTTV53QOFSMK", "length": "1228", "offset": "784", "filename": "example.warc.gz"}
-com,example)/ 20170306040206 {"url": "http://example.com/", "mime": "unk", "digest": "3I42H3S6NNFQ2MSVX7XZKYAYSCX5QBYJ", "length": "526", "offset": "2012", "filename": "example.warc.gz"}
+com,example)/ 20170306040206 {"url": "http://example.com/", "digest": "3I42H3S6NNFQ2MSVX7XZKYAYSCX5QBYJ", "length": "526", "offset": "2012", "filename": "example.warc.gz"}
 com,example)/ 20170306040348 {"url": "http://example.com/", "mime": "warc/revisit", "status": "200", "digest": "G7HRM7BGOKSKMSXZAHMUQTTV53QOFSMK", "length": "585", "offset": "2538", "filename": "example.warc.gz"}
-com,example)/ 20170306040348 {"url": "http://example.com/", "mime": "unk", "digest": "3I42H3S6NNFQ2MSVX7XZKYAYSCX5QBYJ", "length": "526", "offset": "3123", "filename": "example.warc.gz"}
+com,example)/ 20170306040348 {"url": "http://example.com/", "digest": "3I42H3S6NNFQ2MSVX7XZKYAYSCX5QBYJ", "length": "526", "offset": "3123", "filename": "example.warc.gz"}
 """
         assert res == exp
 
@@ -97,9 +97,9 @@ com,example)/ 20140216050221 {"url": "http://example.com/", "mime": "text/html",
         res = self.index_file('bad.arc', cdx11=True)
         exp = """\
  CDX N b a m s k r M S V g
-com,example)/ 20140401000000 http://example.com/ unk - 3I42H3S6NNFQ2MSVX7XZKYAYSCX5QBYJ - - 67 134 bad.arc
-com,example)/ 20140102000000 http://example.com/ unk - 3I42H3S6NNFQ2MSVX7XZKYAYSCX5QBYJ - - 59 202 bad.arc
-com,example)/ 20140401000000 http://example.com/ unk - 3I42H3S6NNFQ2MSVX7XZKYAYSCX5QBYJ - - 68 262 bad.arc
+com,example)/ 20140401000000 http://example.com/ - - 3I42H3S6NNFQ2MSVX7XZKYAYSCX5QBYJ - - 67 134 bad.arc
+com,example)/ 20140102000000 http://example.com/ - - 3I42H3S6NNFQ2MSVX7XZKYAYSCX5QBYJ - - 59 202 bad.arc
+com,example)/ 20140401000000 http://example.com/ - - 3I42H3S6NNFQ2MSVX7XZKYAYSCX5QBYJ - - 68 262 bad.arc
 """
         assert res == exp
 

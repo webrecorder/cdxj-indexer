@@ -6,7 +6,7 @@ from warcio.warcwriter import BufferWARCWriter
 from warcio.archiveiterator import ArchiveIterator
 
 from argparse import ArgumentParser, RawTextHelpFormatter
-from cdxj_indexer.postquery import append_post_query
+#from cdxj_indexer.postquery import append_post_query
 
 from io import BytesIO
 
@@ -18,14 +18,13 @@ import logging
 # ============================================================================
 class CDXJIndexer(Indexer):
     field_names = {'warc-target-uri': 'url',
-                   'http:content-type': 'mime',
                    'http:status': 'status',
                    'warc-payload-digest': 'digest',
                    'req.http:referer': 'referrer',
                   }
 
     DEFAULT_FIELDS = ['warc-target-uri',
-                      'http:content-type',
+                      'mime',
                       'http:status',
                       'warc-payload-digest',
                       'length',
@@ -66,17 +65,19 @@ class CDXJIndexer(Indexer):
         return fields
 
     def get_field(self, record, name, it, filename):
-        if name == 'http:content-type':
+        if name == 'mime':
             if record.rec_type == 'revisit':
                 return 'warc/revisit'
+            elif record.rec_type in ('response', 'request'):
+                name = 'http:content-type'
             else:
-                value = super(CDXJIndexer, self).get_field(record, name, it, filename)
-                if value:
-                    value = value.split(';')[0].strip()
-                else:
-                    value = 'unk'
+                name = 'content-type'
 
-                return value
+            value = super(CDXJIndexer, self).get_field(record, name, it, filename)
+            if value:
+                value = value.split(';')[0].strip()
+
+            return value
 
         if name == 'filename' and self.force_filename:
             return self.force_filename
