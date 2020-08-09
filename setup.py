@@ -5,7 +5,7 @@ from setuptools import setup, find_packages
 from setuptools.command.test import test as TestCommand
 import glob
 
-__version__ = '1.0'
+__version__ = '1.1.0'
 
 
 class PyTest(TestCommand):
@@ -18,7 +18,7 @@ class PyTest(TestCommand):
         import pytest
         import sys
         import os
-        errcode = pytest.main(['--doctest-module', './cdxj_indexer', '--cov', 'cdxj_indexer', '-v', 'test/'])
+        errcode = pytest.main(['--doctest-modules', './cdxj_indexer', '--cov', 'cdxj_indexer', '-v', 'test/'])
         sys.exit(errcode)
 
 setup(
@@ -41,7 +41,7 @@ setup(
     zip_safe=True,
     entry_points="""
         [console_scripts]
-        cdxj-indexer=cdxj_indexer.cdxj_indexer:main
+        cdxj-indexer=cdxj_indexer.main:main
     """,
     cmdclass={'test': PyTest},
     test_suite='',
@@ -53,13 +53,11 @@ setup(
         'Development Status :: 4 - Beta',
         'Environment :: Web Environment',
         'License :: OSI Approved :: Apache Software License',
-        'Programming Language :: Python :: 2',
-        'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.3',
-        'Programming Language :: Python :: 3.4',
         'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.7',
+        'Programming Language :: Python :: 3.8',
         'Topic :: Software Development :: Libraries :: Python Modules',
         'Topic :: Utilities',
     ]

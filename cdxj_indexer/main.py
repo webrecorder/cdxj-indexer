@@ -4,6 +4,7 @@ from warcio.indexer import Indexer
 from warcio.timeutils import iso_date_to_timestamp
 from warcio.warcwriter import BufferWARCWriter
 from warcio.archiveiterator import ArchiveIterator
+from warcio.utils import open_or_default
 
 from argparse import ArgumentParser, RawTextHelpFormatter
 from cdxj_indexer.postquery import append_post_query
@@ -16,6 +17,8 @@ import surt
 import logging
 import os
 import re
+import sys
+import zlib
 
 
 # ============================================================================
@@ -173,8 +176,7 @@ class CDXJIndexer(Indexer):
         self._do_write(urlkey, ts, index, out)
 
     def _do_write(self, urlkey, ts, index, out):
-        out.write(urlkey + ' ' + ts + ' ')
-        out.write(json.dumps(index) + '\n')
+        out.write(urlkey + ' ' + ts + ' ' + json.dumps(index) + '\n')
 
     def get_url_key(self, url):
         try:
@@ -275,6 +277,74 @@ class CDX09Indexer(CDXLegacyIndexer):
 
 
 # ============================================================================
+class SortingWriter:
+    def __init__(self, out):
+        self.out = out
+        self.sortedlist = []
+
+    def write(self, line):
+        self.sortedlist.append(line)
+
+    def flush(self):
+        self.sortedlist.sort()
+        for line in self.sortedlist:
+            self.out.write(line)
+
+        self.out.flush()
+
+
+# ============================================================================
+class CompressedWriter:
+    def __init__(self, index_out, data_out, num_lines = 300, data_out_name = ''):
+        self.index_out = index_out
+        self.data_out = data_out
+        self.data_out_name = data_out_name
+
+        self.block = []
+        self.offset = 0
+        self.prefix = ''
+        self.num_lines = num_lines
+
+    def write_header(self):
+        meta = json.dumps({
+            'format': 'cdxj-gzip-1.0',
+            'filename': self.data_out_name
+        })
+
+        self.index_out.write('!meta 0 {0}\n'.format(meta))
+
+    def write(self, line):
+        if not len(self.block):
+            self.prefix = line.split('{', 1)[0].strip()
+            if not self.offset:
+                self.write_header()
+
+        self.block.append(line)
+
+        if len(self.block) == self.num_lines:
+            self.flush()
+
+    def get_index_json(self, length):
+        data = {'offset': self.offset,
+                'length': length
+               }
+
+        return json.dumps(data) + "\n"
+
+    def flush(self):
+        comp = zlib.compressobj(wbits=16 + zlib.MAX_WBITS)
+        compressed = comp.compress(''.join(self.block).encode('utf-8'))
+        compressed += comp.flush()
+
+        length = len(compressed)
+        line = self.prefix + ' ' + self.get_index_json(length)
+        self.index_out.write(line)
+        self.data_out.write(compressed)
+        self.offset += length
+        self.block = []
+
+
+# ============================================================================
 def main(args=None):
     parser = ArgumentParser(description='cdx_indexer',
                             formatter_class=RawTextHelpFormatter)
@@ -296,17 +366,23 @@ def main(args=None):
 
     parser.add_argument('-p', '--post-append', action='store_true')
 
+    parser.add_argument('-s', '--sort', action='store_true')
+
+    parser.add_argument('-c', '--compress')
+
+    parser.add_argument('-l', '--lines', type=int, default=300)
+
     cmd = parser.parse_args(args=args)
 
-    write_cdx_index(cmd.output, cmd.inputs, vars(cmd))
+    write_cdxj_index(cmd.output, cmd.inputs, vars(cmd))
 
 
 # ============================================================================
-def write_cdx_index(output, inputs, opt):
-    opt = opt or {}
-    if opt.get('cdx11'):
+def write_cdxj_index(output, inputs, opts):
+    opts = opts or {}
+    if opts.get('cdx11'):
         cls = CDX11Indexer
-    elif opt.get('cdx09'):
+    elif opts.get('cdx09'):
         cls = CDX09Indexer
     else:
         cls = CDXJIndexer
@@ -314,8 +390,30 @@ def write_cdx_index(output, inputs, opt):
     if isinstance(inputs, str) or hasattr(inputs, 'read'):
         inputs = [inputs]
 
-    indexer = cls(output, inputs, opt)
-    indexer.process_all()
+    data_out = None
+
+    with open_or_default(output, 'wt', sys.stdout) as fh:
+        compress = opts.get('compress')
+        if compress:
+            if isinstance(compress, str):
+                data_out = open(opts.get('compress'), 'wb')
+                if os.path.splitext(compress)[1] == '':
+                    compress += '.cdxj.gz'
+
+                fh = CompressedWriter(fh, data_out=data_out, data_out_name=compress, num_lines=opts.get('lines'))
+            else:
+                fh = CompressedWriter(fh, data_out=compress, data_out_name=opts.get('data_out_name', ''), num_lines=opts.get('lines'))
+
+
+        if opts.get('sort'):
+            fh = SortingWriter(fh)
+
+        cls(fh, inputs, opts).process_all()
+
+        if opts.get('sort') or opts.get('compress'):
+            fh.flush()
+            if data_out:
+                data_out.close()
 
 
 # ============================================================================

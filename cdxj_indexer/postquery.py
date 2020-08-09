@@ -1,6 +1,6 @@
 from warcio.utils import to_native_str
 
-from six.moves.urllib.parse import unquote_plus
+from urllib.parse import unquote_plus, urlencode
 from io import BytesIO
 
 import base64
@@ -61,7 +61,7 @@ def post_query_extract(mime, length, stream):
         mime = ''
 
     if mime.startswith('application/x-www-form-urlencoded'):
-        post_query = to_native_str(post_query)
+        post_query = post_query.decode('utf-8')
         post_query = unquote_plus(post_query)
 
     elif mime.startswith('multipart/'):
@@ -73,8 +73,7 @@ def post_query_extract(mime, length, stream):
                     environ=env,
                     keep_blank_values=True)
 
-        if six.PY3:
-            args['encoding'] = 'utf-8'
+        args['encoding'] = 'utf-8'
 
         data = cgi.FieldStorage(**args)
 
