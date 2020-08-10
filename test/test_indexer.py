@@ -8,7 +8,7 @@ try:
 except ImportError:  #pragma: no cover
     from io import StringIO
 
-from cdxj_indexer.main import write_cdxj_index, main
+from cdxj_indexer.main import write_cdx_index, main
 
 import pkg_resources
 
@@ -31,13 +31,13 @@ def patch_stdout():
 class TestIndexing(object):
     def index_file(self, filename, **opts):
         output = StringIO()
-        write_cdxj_index(output, os.path.join(TEST_DIR, filename), opts)
+        write_cdx_index(output, os.path.join(TEST_DIR, filename), opts)
         return output.getvalue()
 
     def index_all(self, **opts):
         output = StringIO()
         paths = [os.path.join(TEST_DIR, filename) for filename in os.listdir(TEST_DIR)]
-        write_cdxj_index(output, paths, opts)
+        write_cdx_index(output, paths, opts)
         return output.getvalue()
 
     def index_file_cli(self, filename):
@@ -119,7 +119,7 @@ com,example)/ 20140216050221 {"url": "http://example.com/", "mime": "text/html",
         assert res == exp
 
     def test_arc_bad_edgecase(self):
-        res = self.index_file('bad.arc', cdx11=True)
+        res = self.index_file('bad.arc', cdx11=True, post_append=True)
         exp = """\
  CDX N b a m s k r M S V g
 com,example)/ 20140401000000 http://example.com/ - - 3I42H3S6NNFQ2MSVX7XZKYAYSCX5QBYJ - - 67 134 bad.arc
@@ -150,27 +150,36 @@ org,httpbin)/post?foo=bar 20140610001255 {"url": "http://httpbin.org/post?foo=ba
         exp = """\
 org,httpbin)/post?another=more^data&test=some+data 20200809195334 {"url": "https://httpbin.org/post", "mime": "application/json", "status": "200", "digest": "7AWVEIPQMCA4KTCNDXWSZ465FITB7LSK", "length": "688", "offset": "0", "filename": "post-test-more.warc"}
 org,httpbin)/post?__warc_post_data=eyjzb21lijogeyjhijogimpzb24tzgf0ysj9fq== 20200809195334 {"url": "https://httpbin.org/post", "mime": "application/json", "status": "200", "digest": "BYOQWRSQFW3A5SNUBDSASHFLXGL4FNGB", "length": "655", "offset": "1227", "filename": "post-test-more.warc"}
+org,httpbin)/post?__warc_post_data=c29tzwnodw5rlwvuy29kzwrkyxrh 20200810055049 {"url": "https://httpbin.org/post", "mime": "application/json", "status": "200", "digest": "34LEADQD3MOBQ42FCO2WA5TUSEL5QOKP", "length": "628", "offset": "2338", "filename": "post-test-more.warc"}
 """
         assert res == exp
 
     def test_warc_cdxj_compressed_1(self):
+        # specify file directly
         with tempfile.TemporaryFile() as temp_fh:
             res = self.index_all(sort=True, post_append=True, compress=temp_fh, data_out_name='comp.cdxj.gz', lines=11)
 
         exp = """\
 !meta 0 {"format": "cdxj-gzip-1.0", "filename": "%s"}
-com,example)/ 20140102000000 {"offset": 0, "length": 681}
-org,httpbin)/post?data=^&foo=bar 20140610001255 {"offset": 681, "length": 280}
+com,example)/ 20140102000000 {"offset": 0, "length": 695}
+org,httpbin)/post?another=more^data&test=some+data 20200809195334 {"offset": 695, "length": 364}
 """
         assert res == exp % "comp.cdxj.gz"
 
+        # specify named temp file, extension auto-added
         with tempfile.NamedTemporaryFile() as temp_fh:
             res = self.index_all(sort=True, post_append=True, compress=temp_fh.name, lines=11)
-
-            #name = os.path.basename(temp_fh.name)
             name = temp_fh.name
 
+
         assert res == exp % (name + ".cdxj.gz")
+
+        # specify named temp file, with extension suffix
+        with tempfile.NamedTemporaryFile(suffix='.cdxj.gz') as temp2_fh:
+            res = self.index_all(sort=True, post_append=True, compress=temp2_fh.name, lines=11)
+            name = temp2_fh.name
+
+        assert res == exp % name
 
     def test_warc_index_add_custom_fields(self):
         res = self.index_file('example.warc.gz', fields='method,referrer,http:date')
@@ -209,7 +218,7 @@ org,commoncrawl)/ 20170722005011 {"mime": "application/warc-fields", "warc-type"
 
         opts = {'filename': 'empty.warc.gz'}
 
-        write_cdxj_index(output, empty, opts)
+        write_cdx_index(output, empty, opts)
 
         assert output.getvalue() == ''
 
@@ -231,7 +240,7 @@ org,commoncrawl)/ 20170722005011 {"mime": "application/warc-fields", "warc-type"
         output = StringIO()
         opts = {'filename': 'empty.warc.gz'}
 
-        write_cdxj_index(output, new_warc, opts)
+        write_cdx_index(output, new_warc, opts)
 
         lines = output.getvalue().rstrip().split('\n')
 

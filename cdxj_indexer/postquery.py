@@ -16,9 +16,6 @@ def append_post_query(req, resp):
 
     post_query = post_query_extract(content_type, len_, stream)
 
-    if not post_query:
-        return
-
     url = req.rec_headers.get_header('WARC-Target-URI')
 
     if '?' not in url:
@@ -43,13 +40,11 @@ def post_query_extract(mime, length, stream):
     try:
         length = int(length)
     except (ValueError, TypeError):
-        return
-
-    if length <= 0:
-        return
+        length = 8192
 
     while length > 0:
         buff = stream.read(length)
+
         length -= len(buff)
 
         if not buff:

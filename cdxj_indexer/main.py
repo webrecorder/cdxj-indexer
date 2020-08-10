@@ -43,36 +43,44 @@ class CDXJIndexer(Indexer):
 
     DEFAULT_RECORDS = ['response', 'revisit', 'resource', 'metadata']
 
-    def __init__(self, output, inputs, opts=None):
-        opts = opts or {}
+    def __init__(self, output, inputs, post_append=False, sort=False, compress=None,
+                 lines=300, data_out_name=None, filename=None,
+                 fields=None, replace_fields=None, records=None, **kwargs):
 
-        fields = self._parse_fields(opts)
+        if isinstance(inputs, str) or hasattr(inputs, 'read'):
+            inputs = [inputs]
+
+        fields = self._parse_fields(fields, replace_fields)
 
         super(CDXJIndexer, self).__init__(fields, inputs, output)
         self.writer = None
 
         self.curr_filename = None
-        self.force_filename = opts.get('filename')
-        self.post_append = opts.get('post_append')
+        self.force_filename = filename
+        self.post_append = post_append
 
-        self.write_records = opts.get('records')
-        if self.write_records == 'all':
-            self.write_records = None
-        elif self.write_records:
-            self.write_records = self.write_records.split(',')
+        self.num_lines = lines
+        self.sort = sort
+        self.compress = compress
+        self.data_out_name = data_out_name
+
+        self.include_records = records
+        if self.include_records == 'all':
+            self.include_records = None
+        elif self.include_records:
+            self.include_records = self.include_records.split(',')
         else:
-            self.write_records = self.DEFAULT_RECORDS
+            self.include_records = self.DEFAULT_RECORDS
 
         self.collect_records = self.post_append or any(field.startswith('req.http:') for field in self.fields)
         self.record_parse = True
 
-    def _parse_fields(self, opts):
-        add_fields = opts.get('replace_fields')
-
+    def _parse_fields(self, fields=None, replace_fields=None):
+        add_fields = replace_fields
         if add_fields:
             fields = []
         else:
-            add_fields = opts.get('fields')
+            add_fields = fields
             fields = copy(self.DEFAULT_FIELDS)
 
         if add_fields:
@@ -130,6 +138,33 @@ class CDXJIndexer(Indexer):
         else:
             return req.http_headers.get_header(name[9:])
 
+    def process_all(self):
+        data_out = None
+
+        with open_or_default(self.output, 'wt', sys.stdout) as fh:
+            if self.compress:
+                if isinstance(self.compress, str):
+                    data_out = open(self.compress, 'wb')
+                    if os.path.splitext(self.compress)[1] == '':
+                        self.compress += '.cdxj.gz'
+
+                    fh = CompressedWriter(fh, data_out=data_out, data_out_name=self.compress, num_lines=self.num_lines)
+                else:
+                    fh = CompressedWriter(fh, data_out=self.compress, data_out_name=self.data_out_name, num_lines=self.num_lines)
+
+
+            if self.sort:
+                fh = SortingWriter(fh)
+
+            self.output = fh
+
+            super().process_all()
+
+            if self.sort or self.compress:
+                fh.flush()
+                if data_out:
+                    data_out.close()
+
     def process_one(self, input_, output, filename):
         self.curr_filename = self.force_filename or os.path.basename(filename)
 
@@ -143,7 +178,7 @@ class CDXJIndexer(Indexer):
             wrap_it = it
 
         for record in wrap_it:
-            if not self.write_records or record.rec_type in self.write_records:
+            if not self.include_records or record.rec_type in self.include_records:
                 self.process_index_entry(it, record, filename, output)
 
     def _get_digest(self, record, name):
@@ -242,9 +277,8 @@ class CDXJIndexer(Indexer):
         method = req.http_headers.protocol
         if self.post_append and method.upper() in ('POST', 'PUT'):
             post_url = append_post_query(req, resp)
-            if post_url:
-                resp.urlkey = self.get_url_key(post_url)
-                req.urlkey = resp.urlkey
+            resp.urlkey = self.get_url_key(post_url)
+            req.urlkey = resp.urlkey
 
 
 # ============================================================================
@@ -374,12 +408,9 @@ def main(args=None):
 
     cmd = parser.parse_args(args=args)
 
-    write_cdxj_index(cmd.output, cmd.inputs, vars(cmd))
+    write_cdx_index(cmd.output, cmd.inputs, vars(cmd))
 
-
-# ============================================================================
-def write_cdxj_index(output, inputs, opts):
-    opts = opts or {}
+def write_cdx_index(output, inputs, opts):
     if opts.get('cdx11'):
         cls = CDX11Indexer
     elif opts.get('cdx09'):
@@ -387,33 +418,12 @@ def write_cdxj_index(output, inputs, opts):
     else:
         cls = CDXJIndexer
 
-    if isinstance(inputs, str) or hasattr(inputs, 'read'):
-        inputs = [inputs]
+    opts.pop('output', '')
+    opts.pop('inputs', '')
 
-    data_out = None
-
-    with open_or_default(output, 'wt', sys.stdout) as fh:
-        compress = opts.get('compress')
-        if compress:
-            if isinstance(compress, str):
-                data_out = open(opts.get('compress'), 'wb')
-                if os.path.splitext(compress)[1] == '':
-                    compress += '.cdxj.gz'
-
-                fh = CompressedWriter(fh, data_out=data_out, data_out_name=compress, num_lines=opts.get('lines'))
-            else:
-                fh = CompressedWriter(fh, data_out=compress, data_out_name=opts.get('data_out_name', ''), num_lines=opts.get('lines'))
-
-
-        if opts.get('sort'):
-            fh = SortingWriter(fh)
-
-        cls(fh, inputs, opts).process_all()
-
-        if opts.get('sort') or opts.get('compress'):
-            fh.flush()
-            if data_out:
-                data_out.close()
+    indexer = cls(output, inputs, **opts)
+    indexer.process_all()
+    return indexer
 
 
 # ============================================================================
