@@ -45,6 +45,8 @@ class CDXJIndexer(Indexer):
 
     DEFAULT_RECORDS = ["response", "revisit", "resource", "metadata"]
 
+    ALLOWED_EXT = (".arc", ".arc.gz", ".warc", ".warc.gz")
+
     def __init__(
         self,
         output,
@@ -58,20 +60,27 @@ class CDXJIndexer(Indexer):
         fields=None,
         replace_fields=None,
         records=None,
+        verify_http=False,
+        dir_root=None,
         **kwargs
     ):
 
         if isinstance(inputs, str) or hasattr(inputs, "read"):
             inputs = [inputs]
 
+        inputs = iter_file_or_dir(inputs)
+
         fields = self._parse_fields(fields, replace_fields)
 
-        super(CDXJIndexer, self).__init__(fields, inputs, output)
+        super(CDXJIndexer, self).__init__(
+            fields, inputs, output, verify_http=verify_http
+        )
         self.writer = None
 
         self.curr_filename = None
         self.force_filename = filename
         self.post_append = post_append
+        self.dir_root = dir_root
 
         self.num_lines = lines
         self.sort = sort
@@ -190,8 +199,17 @@ class CDXJIndexer(Indexer):
                 if data_out:
                     data_out.close()
 
+    def _resolve_rel_path(self, filename):
+        if not self.dir_root:
+            return os.path.basename(filename)
+
+        path = os.path.relpath(filename, self.dir_root)
+        if os.path.sep != "/":  # pragma: no cover
+            path = path.replace(os.path.sep, "/")
+        return path
+
     def process_one(self, input_, output, filename):
-        self.curr_filename = self.force_filename or os.path.basename(filename)
+        self.curr_filename = self.force_filename or self._resolve_rel_path(filename)
 
         it = self._create_record_iter(input_)
 
@@ -368,8 +386,11 @@ class SortingWriter:
 
     def flush(self):
         self.sortedlist.sort()
+        lastline = None
         for line in self.sortedlist:
-            self.out.write(line)
+            if lastline != line:
+                self.out.write(line)
+            lastline = line
 
         self.out.flush()
 
@@ -437,7 +458,9 @@ def main(args=None):
     group.add_argument("-f", "--fields")
     group.add_argument("-rf", "--replace-fields")
 
-    parser.add_argument("-r", "--records")
+    parser.add_argument("--records")
+
+    parser.add_argument("--dir-root")
 
     parser.add_argument("-p", "--post-append", action="store_true")
 
@@ -466,6 +489,24 @@ def write_cdx_index(output, inputs, opts):
     indexer = cls(output, inputs, **opts)
     indexer.process_all()
     return indexer
+
+
+# =================================================================
+def iter_file_or_dir(inputs, recursive=True):
+    for input_ in inputs:
+        if not isinstance(input_, str):
+            yield input_
+            continue
+
+        if not os.path.isdir(input_):
+            yield input_
+            return
+
+        for root, dirs, files in os.walk(input_):
+            for filename in files:
+                if filename.endswith(CDXJIndexer.ALLOWED_EXT):
+                    full_path = os.path.join(root, filename)
+                    yield full_path
 
 
 # ============================================================================

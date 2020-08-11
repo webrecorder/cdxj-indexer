@@ -36,7 +36,8 @@ class TestIndexing(object):
 
     def index_all(self, **opts):
         output = StringIO()
-        paths = [os.path.join(TEST_DIR, filename) for filename in os.listdir(TEST_DIR)]
+        # paths = [os.path.join(TEST_DIR, filename) for filename in os.listdir(TEST_DIR)]
+        paths = [TEST_DIR]
         write_cdx_index(output, paths, opts)
         return output.getvalue()
 
@@ -70,6 +71,14 @@ org,commoncrawl)/ 20170722005011 {"url": "https://commoncrawl.org/", "mime": "te
 """
         assert res == exp
 
+    def test_warc_cdxj_dir_root(self):
+        res = self.index_file("example.warc.gz", dir_root="./")
+        exp = """\
+com,example)/ 20170306040206 {"url": "http://example.com/", "mime": "text/html", "status": "200", "digest": "G7HRM7BGOKSKMSXZAHMUQTTV53QOFSMK", "length": "1228", "offset": "784", "filename": "test/data/example.warc.gz"}
+com,example)/ 20170306040348 {"url": "http://example.com/", "mime": "warc/revisit", "status": "200", "digest": "G7HRM7BGOKSKMSXZAHMUQTTV53QOFSMK", "length": "585", "offset": "2538", "filename": "test/data/example.warc.gz"}
+"""
+        assert res == exp
+
     def test_warc_cdx_11(self):
         res = self.index_file("example.warc.gz", cdx11=True)
         exp = """\
@@ -87,6 +96,12 @@ com,example)/ 20170306040206 http://example.com/ text/html 200 G7HRM7BGOKSKMSXZA
 com,example)/ 20170306040348 http://example.com/ warc/revisit 200 G7HRM7BGOKSKMSXZAHMUQTTV53QOFSMK - 2635 example.warc.gz
 """
         assert res == exp
+
+    def test_warc_cdx_11_avoid_dupe_line(self):
+        res = self.index_all(cdx11=True, sort=True)
+        lines = res.split("\n")
+        assert lines[0] == " CDX N b a m s k r M S V g"
+        assert lines[1] != " CDX N b a m s k r M S V g"
 
     def test_warc_request_only(self):
         res = self.index_file("example.warc.gz", records="request", fields="method")
