@@ -47,6 +47,8 @@ class CDXJIndexer(Indexer):
 
     ALLOWED_EXT = (".arc", ".arc.gz", ".warc", ".warc.gz")
 
+    RE_SPACE = re.compile(r'[;\s]')
+
     def __init__(
         self,
         output,
@@ -126,7 +128,7 @@ class CDXJIndexer(Indexer):
 
             value = super(CDXJIndexer, self).get_field(record, name, it, filename)
             if value:
-                value = re.split(r'[;\s]', value, 1)[0].strip()
+                value = self.RE_SPACE.split(value, 1)[0].strip()
 
             return value
 

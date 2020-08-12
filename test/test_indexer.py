@@ -74,8 +74,8 @@ org,commoncrawl)/ 20170722005011 {"url": "https://commoncrawl.org/", "mime": "te
     def test_warc_cdxj_dir_root(self):
         res = self.index_file("example.warc.gz", dir_root="./")
         exp = """\
-com,example)/ 20170306040206 {"url": "http://example.com/", "mime": "text/html", "status": "200", "digest": "G7HRM7BGOKSKMSXZAHMUQTTV53QOFSMK", "length": "1228", "offset": "784", "filename": "test/data/example.warc.gz"}
-com,example)/ 20170306040348 {"url": "http://example.com/", "mime": "warc/revisit", "status": "200", "digest": "G7HRM7BGOKSKMSXZAHMUQTTV53QOFSMK", "length": "585", "offset": "2538", "filename": "test/data/example.warc.gz"}
+com,example)/ 20170306040206 {"url": "http://example.com/", "mime": "text/html", "status": "200", "digest": "G7HRM7BGOKSKMSXZAHMUQTTV53QOFSMK", "length": "1242", "offset": "784", "filename": "test/data/example.warc.gz"}
+com,example)/ 20170306040348 {"url": "http://example.com/", "mime": "warc/revisit", "status": "200", "digest": "G7HRM7BGOKSKMSXZAHMUQTTV53QOFSMK", "length": "585", "offset": "2635", "filename": "test/data/example.warc.gz"}
 """
         assert res == exp
 
@@ -182,8 +182,8 @@ org,httpbin)/post?__warc_post_data=c29tzwnodw5rlwvuy29kzwrkyxrh 20200810055049 {
 
         exp = """\
 !meta 0 {"format": "cdxj-gzip-1.0", "filename": "%s"}
-com,example)/ 20140102000000 {"offset": 0, "length": 695}
-org,httpbin)/post?another=more^data&test=some+data 20200809195334 {"offset": 695, "length": 364}
+com,example)/ 20140102000000 {"offset": 0, "length": 696}
+org,httpbin)/post?another=more^data&test=some+data 20200809195334 {"offset": 696, "length": 364}
 """
         assert res == exp % "comp.cdxj.gz"
 
