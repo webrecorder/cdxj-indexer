@@ -15,6 +15,7 @@ import json
 import surt
 import logging
 import os
+import re
 
 
 # ============================================================================
@@ -89,7 +90,7 @@ class CDXJIndexer(Indexer):
 
             value = super(CDXJIndexer, self).get_field(record, name, it, filename)
             if value:
-                value = value.split(';')[0].strip()
+                value = re.split(r'[;\s]', value, 1)[0].strip()
 
             return value
 
