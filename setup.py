@@ -39,7 +39,7 @@ setup(
     author_email="ikreymer@gmail.com",
     license="Apache 2.0",
     packages=find_packages(),
-    url="https://github.com/webrecorder/cdxj_indexer",
+    url="https://github.com/webrecorder/cdxj-indexer",
     description="CDXJ Indexer for WARC and ARC files",
     long_description=open("README.rst").read(),
     provides=["cdxj_indexer",],
