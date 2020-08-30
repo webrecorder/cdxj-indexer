@@ -8,23 +8,11 @@ try:
 except ImportError:  # pragma: no cover
     from io import StringIO
 
-from cdxj_indexer.main import write_cdx_index, main
+from cdxj_indexer.main import write_cdx_index, main, CDXJIndexer
 
 import pkg_resources
 
 TEST_DIR = os.path.join(os.path.dirname(os.path.realpath(__file__)), "data")
-
-from contextlib import contextmanager
-
-
-# ============================================================================
-@contextmanager
-def patch_stdout():
-    buff = StringIO()
-    orig = sys.stdout
-    sys.stdout = buff
-    yield buff
-    sys.stdout = orig
 
 
 # ============================================================================
@@ -41,11 +29,10 @@ class TestIndexing(object):
         write_cdx_index(output, paths, opts)
         return output.getvalue()
 
-    def index_file_cli(self, filename):
-        with patch_stdout() as output:
-            res = main([os.path.join(TEST_DIR, filename)])
+    def index_file_cli(self, filename, capsys):
+        res = main([os.path.join(TEST_DIR, filename)])
 
-        return output.getvalue()
+        return capsys.readouterr().out
 
     def test_warc_cdxj(self):
         res = self.index_file("example.warc.gz")
@@ -55,8 +42,8 @@ com,example)/ 20170306040348 {"url": "http://example.com/", "mime": "warc/revisi
 """
         assert res == exp
 
-    def test_warc_cdxj_cli_main(self):
-        res = self.index_file_cli("example.warc.gz")
+    def test_warc_cdxj_cli_main(self, capsys):
+        res = self.index_file_cli("example.warc.gz", capsys)
         exp = """\
 com,example)/ 20170306040206 {"url": "http://example.com/", "mime": "text/html", "status": "200", "digest": "G7HRM7BGOKSKMSXZAHMUQTTV53QOFSMK", "length": "1242", "offset": "784", "filename": "example.warc.gz"}
 com,example)/ 20170306040348 {"url": "http://example.com/", "mime": "warc/revisit", "status": "200", "digest": "G7HRM7BGOKSKMSXZAHMUQTTV53QOFSMK", "length": "585", "offset": "2635", "filename": "example.warc.gz"}
@@ -275,3 +262,23 @@ org,commoncrawl)/ 20170722005011 {"mime": "application/warc-fields", "warc-type"
         lines = output.getvalue().rstrip().split("\n")
 
         assert len(lines) == 4, lines
+
+
+class CustomIndexer(CDXJIndexer):
+    def process_index_entry(self, it, record, *args):
+        type_ = record.rec_headers.get('WARC-Type')
+        if type_ == 'response' and record.http_headers.get('Content-Type').startswith('text/html'):
+            assert record.buffered_stream.read() != b''
+
+
+def test_custom_indexer():
+    output = StringIO()
+    indexer = CustomIndexer(
+        output=output,
+        inputs=[os.path.join(TEST_DIR, "example.warc.gz")],
+        fields="referrer")
+
+    assert indexer.collect_records
+
+    indexer.process_all()
+

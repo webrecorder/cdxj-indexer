@@ -17,7 +17,9 @@ import surt
 import logging
 import os
 import re
+import shutil
 import sys
+import tempfile
 import zlib
 
 
@@ -291,12 +293,20 @@ class CDXJIndexer(Indexer):
 
         return req, resp
 
+    def read_content(self, record):
+        spool = tempfile.SpooledTemporaryFile()
+        shutil.copyfileobj(record.content_stream(), spool)
+        spool.seek(0)
+        record.buffered_stream = spool
+        #record.buffered_stream = BytesIO(record.content_stream().read())
+
+
     def req_resolving_iter(self, record_iter):
         prev_record = None
 
         for record in record_iter:
-            if record.rec_type == "request":
-                record.buffered_stream = BytesIO(record.content_stream().read())
+            #if record.rec_type == "request":
+            self.read_content(record)
 
             record.file_offset = record_iter.get_record_offset()
             record.file_length = record_iter.get_record_length()
@@ -306,17 +316,21 @@ class CDXJIndexer(Indexer):
             if not req or not resp:
                 if prev_record:
                     yield prev_record
+                    prev_record.buffered_stream.close()
                 prev_record = record
                 continue
 
             self._join_req_resp(req, resp)
 
             yield prev_record
+            prev_record.buffered_stream.close()
             yield record
+            record.buffered_stream.close()
             prev_record = None
 
         if prev_record:
             yield prev_record
+            prev_record.buffered_stream.close()
 
     def _join_req_resp(self, req, resp):
         resp.req = req
