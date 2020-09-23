@@ -22,10 +22,10 @@ class TestIndexing(object):
         write_cdx_index(output, os.path.join(TEST_DIR, filename), opts)
         return output.getvalue()
 
-    def index_all(self, **opts):
+    def index_all(self, filenames, **opts):
         output = StringIO()
         # paths = [os.path.join(TEST_DIR, filename) for filename in os.listdir(TEST_DIR)]
-        paths = [TEST_DIR]
+        paths = [os.path.join(TEST_DIR, filename) for filename in filenames]
         write_cdx_index(output, paths, opts)
         return output.getvalue()
 
@@ -85,10 +85,14 @@ com,example)/ 20170306040348 http://example.com/ warc/revisit 200 G7HRM7BGOKSKMS
         assert res == exp
 
     def test_warc_cdx_11_avoid_dupe_line(self):
-        res = self.index_all(cdx11=True, sort=True)
+        res = self.index_file('', cdx11=True, sort=True)
         lines = res.split("\n")
         assert lines[0] == " CDX N b a m s k r M S V g"
         assert lines[1] != " CDX N b a m s k r M S V g"
+
+    def test_index_multiple_files(self):
+        res = self.index_all(["example.warc.gz",  "post-test.warc.gz"])
+        assert len(res.strip().split("\n")) == 5
 
     def test_warc_request_only(self):
         res = self.index_file("example.warc.gz", records="request", fields="method")
@@ -159,7 +163,7 @@ org,httpbin)/post?__warc_post_data=c29tzwnodw5rlwvuy29kzwrkyxrh 20200810055049 {
     def test_warc_cdxj_compressed_1(self):
         # specify file directly
         with tempfile.TemporaryFile() as temp_fh:
-            res = self.index_all(
+            res = self.index_file('',
                 sort=True,
                 post_append=True,
                 compress=temp_fh,
@@ -176,7 +180,7 @@ org,httpbin)/post?another=more^data&test=some+data 20200809195334 {"offset": 696
 
         # specify named temp file, extension auto-added
         with tempfile.NamedTemporaryFile() as temp_fh:
-            res = self.index_all(
+            res = self.index_file('',
                 sort=True, post_append=True, compress=temp_fh.name, lines=11
             )
             name = temp_fh.name
@@ -185,7 +189,7 @@ org,httpbin)/post?another=more^data&test=some+data 20200809195334 {"offset": 696
 
         # specify named temp file, with extension suffix
         with tempfile.NamedTemporaryFile(suffix=".cdxj.gz") as temp2_fh:
-            res = self.index_all(
+            res = self.index_file('',
                 sort=True, post_append=True, compress=temp2_fh.name, lines=11
             )
             name = temp2_fh.name

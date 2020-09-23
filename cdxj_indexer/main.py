@@ -510,13 +510,9 @@ def write_cdx_index(output, inputs, opts):
 # =================================================================
 def iter_file_or_dir(inputs, recursive=True):
     for input_ in inputs:
-        if not isinstance(input_, str):
+        if not isinstance(input_, str) or not os.path.isdir(input_):
             yield input_
             continue
-
-        if not os.path.isdir(input_):
-            yield input_
-            return
 
         for root, dirs, files in os.walk(input_):
             for filename in files:
