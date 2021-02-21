@@ -7,7 +7,7 @@ from warcio.archiveiterator import ArchiveIterator
 from warcio.utils import open_or_default
 
 from argparse import ArgumentParser, RawTextHelpFormatter
-from cdxj_indexer.postquery import append_post_query
+from cdxj_indexer.postquery import append_method_query
 
 from io import BytesIO
 from copy import copy
@@ -255,6 +255,11 @@ class CDXJIndexer(Indexer):
         else:
             urlkey = self.get_url_key(url)
 
+        if hasattr(record, "append_q"):
+            index["requestBody"] = record.append_q
+        if hasattr(record, "method"):
+            index["method"] = record.method
+
         self._do_write(urlkey, ts, index, out)
 
     def _do_write(self, urlkey, ts, index, out):
@@ -337,8 +342,11 @@ class CDXJIndexer(Indexer):
 
         method = req.http_headers.protocol
         if self.post_append and method.upper() in ("POST", "PUT"):
-            post_url = append_post_query(req, resp)
-            resp.urlkey = self.get_url_key(post_url)
+            url = req.rec_headers.get_header("WARC-Target-URI")
+            append_q = append_method_query(req, resp)
+            resp.method = method.upper()
+            resp.append_q = append_q
+            resp.urlkey = self.get_url_key(url + append_q)
             req.urlkey = resp.urlkey
 
 
