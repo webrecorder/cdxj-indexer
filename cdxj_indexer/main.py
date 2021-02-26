@@ -255,8 +255,8 @@ class CDXJIndexer(Indexer):
         else:
             urlkey = self.get_url_key(url)
 
-        if hasattr(record, "append_q"):
-            index["requestBody"] = record.append_q
+        if hasattr(record, "requestBody"):
+            index["requestBody"] = record.requestBody
         if hasattr(record, "method"):
             index["method"] = record.method
 
@@ -343,10 +343,10 @@ class CDXJIndexer(Indexer):
         method = req.http_headers.protocol
         if self.post_append and method.upper() in ("POST", "PUT"):
             url = req.rec_headers.get_header("WARC-Target-URI")
-            append_q = append_method_query(req, resp)
+            query, append_str = append_method_query(req, resp)
             resp.method = method.upper()
-            resp.append_q = append_q
-            resp.urlkey = self.get_url_key(url + append_q)
+            resp.requestBody = query
+            resp.urlkey = self.get_url_key(url + append_str)
             req.urlkey = resp.urlkey
 
 

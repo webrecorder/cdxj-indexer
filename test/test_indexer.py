@@ -137,9 +137,9 @@ com,example)/ 20140401000000 http://example.com/ - - 3I42H3S6NNFQ2MSVX7XZKYAYSCX
     def test_warc_post_query_append(self):
         res = self.index_file("post-test.warc.gz", post_append=True)
         exp = """\
-org,httpbin)/post?__wb_method=post&foo=bar&test=abc 20140610000859 {"url": "http://httpbin.org/post", "mime": "application/json", "status": "200", "digest": "M532K5WS4GY2H4OVZO6HRPOP47A7KDWU", "length": "720", "offset": "0", "filename": "post-test.warc.gz", "requestBody": "?__wb_method=POST&foo=bar&test=abc", "method": "POST"}
-org,httpbin)/post?__wb_method=post&a=1&b=[]&c=3 20140610001151 {"url": "http://httpbin.org/post", "mime": "application/json", "status": "200", "digest": "M7YCTM7HS3YKYQTAWQVMQSQZBNEOXGU2", "length": "723", "offset": "1196", "filename": "post-test.warc.gz", "requestBody": "?__wb_method=POST&A=1&B=[]&C=3", "method": "POST"}
-org,httpbin)/post?__wb_method=post&data=^&foo=bar 20140610001255 {"url": "http://httpbin.org/post?foo=bar", "mime": "application/json", "status": "200", "digest": "B6E5P6JUZI6UPDTNO4L2BCHMGLTNCUAJ", "length": "723", "offset": "2395", "filename": "post-test.warc.gz", "requestBody": "&__wb_method=POST&data=^", "method": "POST"}
+org,httpbin)/post?__wb_method=post&foo=bar&test=abc 20140610000859 {"url": "http://httpbin.org/post", "mime": "application/json", "status": "200", "digest": "M532K5WS4GY2H4OVZO6HRPOP47A7KDWU", "length": "720", "offset": "0", "filename": "post-test.warc.gz", "requestBody": "foo=bar&test=abc", "method": "POST"}
+org,httpbin)/post?__wb_method=post&a=1&b=[]&c=3 20140610001151 {"url": "http://httpbin.org/post", "mime": "application/json", "status": "200", "digest": "M7YCTM7HS3YKYQTAWQVMQSQZBNEOXGU2", "length": "723", "offset": "1196", "filename": "post-test.warc.gz", "requestBody": "A=1&B=[]&C=3", "method": "POST"}
+org,httpbin)/post?__wb_method=post&data=^&foo=bar 20140610001255 {"url": "http://httpbin.org/post?foo=bar", "mime": "application/json", "status": "200", "digest": "B6E5P6JUZI6UPDTNO4L2BCHMGLTNCUAJ", "length": "723", "offset": "2395", "filename": "post-test.warc.gz", "requestBody": "data=^", "method": "POST"}
 """
         assert res == exp
 
@@ -154,9 +154,9 @@ org,httpbin)/post?foo=bar 20140610001255 {"url": "http://httpbin.org/post?foo=ba
     def test_warc_post_query_append_multi_and_json(self):
         res = self.index_file("post-test-more.warc", post_append=True)
         exp = """\
-org,httpbin)/post?__wb_method=post&another=more^data&test=some+data 20200809195334 {"url": "https://httpbin.org/post", "mime": "application/json", "status": "200", "digest": "7AWVEIPQMCA4KTCNDXWSZ465FITB7LSK", "length": "688", "offset": "0", "filename": "post-test-more.warc", "requestBody": "?__wb_method=POST&test=some+data&another=more%5Edata", "method": "POST"}
-org,httpbin)/post?__wb_method=post&a=json-data 20200809195334 {"url": "https://httpbin.org/post", "mime": "application/json", "status": "200", "digest": "BYOQWRSQFW3A5SNUBDSASHFLXGL4FNGB", "length": "655", "offset": "1227", "filename": "post-test-more.warc", "requestBody": "?__wb_method=POST&a=json-data", "method": "POST"}
-org,httpbin)/post?__wb_method=post&__wb_post_data=c29tzwnodw5rlwvuy29kzwrkyxrh 20200810055049 {"url": "https://httpbin.org/post", "mime": "application/json", "status": "200", "digest": "34LEADQD3MOBQ42FCO2WA5TUSEL5QOKP", "length": "628", "offset": "2338", "filename": "post-test-more.warc", "requestBody": "?__wb_method=POST&__wb_post_data=c29tZWNodW5rLWVuY29kZWRkYXRh", "method": "POST"}
+org,httpbin)/post?__wb_method=post&another=more^data&test=some+data 20200809195334 {"url": "https://httpbin.org/post", "mime": "application/json", "status": "200", "digest": "7AWVEIPQMCA4KTCNDXWSZ465FITB7LSK", "length": "688", "offset": "0", "filename": "post-test-more.warc", "requestBody": "test=some+data&another=more%5Edata", "method": "POST"}
+org,httpbin)/post?__wb_method=post&a=json-data 20200809195334 {"url": "https://httpbin.org/post", "mime": "application/json", "status": "200", "digest": "BYOQWRSQFW3A5SNUBDSASHFLXGL4FNGB", "length": "655", "offset": "1227", "filename": "post-test-more.warc", "requestBody": "a=json-data", "method": "POST"}
+org,httpbin)/post?__wb_method=post&__wb_post_data=c29tzwnodw5rlwvuy29kzwrkyxrh 20200810055049 {"url": "https://httpbin.org/post", "mime": "application/json", "status": "200", "digest": "34LEADQD3MOBQ42FCO2WA5TUSEL5QOKP", "length": "628", "offset": "2338", "filename": "post-test-more.warc", "requestBody": "__wb_post_data=c29tZWNodW5rLWVuY29kZWRkYXRh", "method": "POST"}
 """
         assert res == exp
 
@@ -173,8 +173,8 @@ org,httpbin)/post?__wb_method=post&__wb_post_data=c29tzwnodw5rlwvuy29kzwrkyxrh 2
 
         exp = """\
 !meta 0 {"format": "cdxj-gzip-1.0", "filename": "%s"}
-com,example)/ 20140102000000 {"offset": 0, "length": 746}
-org,httpbin)/post?__wb_method=post&another=more^data&test=some+data 20200809195334 {"offset": 746, "length": 424}
+com,example)/ 20140102000000 {"offset": 0, "length": 742}
+org,httpbin)/post?__wb_method=post&another=more^data&test=some+data 20200809195334 {"offset": 742, "length": 416}
 """
         assert res == exp % "comp.cdxj.gz"
 

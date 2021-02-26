@@ -20,13 +20,13 @@ def append_method_query(req, resp):
     query = query_extract(content_type, len_, stream, url)
 
     if "?" not in url:
-        append_q = "?"
+        append_str = "?"
     else:
-        append_q = "&"
+        append_str = "&"
 
     method = req.http_headers.protocol
-    append_q += "__wb_method=" + method + "&" + query
-    return append_q
+    append_str += "__wb_method=" + method + "&" + query
+    return query, append_str
 
 
 # ============================================================================
