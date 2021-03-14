@@ -225,8 +225,19 @@ class CDXJIndexer(Indexer):
             wrap_it = it
 
         for record in wrap_it:
-            if not self.include_records or record.rec_type in self.include_records:
+            if not self.include_records or self.filter_record(record):
                 self.process_index_entry(it, record, filename, output)
+
+    def filter_record(self, record):
+        if not record.rec_type in self.include_records:
+            return False
+
+        if (self.include_records == self.DEFAULT_RECORDS and
+            record.rec_type in ('resource', 'metadata') and
+            record.rec_headers.get_header("Content-Type") == "application/warc-fields"):
+            return False
+
+        return True
 
     def _get_digest(self, record, name):
         value = record.rec_headers.get(name)

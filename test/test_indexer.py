@@ -53,7 +53,6 @@ com,example)/ 20170306040348 {"url": "http://example.com/", "mime": "warc/revisi
     def test_warc_cdxj_sorted(self):
         res = self.index_file("cc.warc.gz", sort=True)
         exp = """\
-org,commoncrawl)/ 20170722005011 {"url": "https://commoncrawl.org/", "mime": "application/warc-fields", "digest": "ZU3CTSUL7QLZI6AWP375VTGTXT7T3BEC", "length": "288", "offset": "5734", "filename": "cc.warc.gz"}
 org,commoncrawl)/ 20170722005011 {"url": "https://commoncrawl.org/", "mime": "text/html", "status": "200", "digest": "RXZILWL37W7MAZTH76FEVIHSF2DZ5HTM", "length": "5357", "offset": "377", "filename": "cc.warc.gz"}
 """
         assert res == exp
@@ -173,8 +172,8 @@ org,httpbin)/post?__wb_method=post&__wb_post_data=c29tzwnodw5rlwvuy29kzwrkyxrh 2
 
         exp = """\
 !meta 0 {"format": "cdxj-gzip-1.0", "filename": "%s"}
-com,example)/ 20140102000000 {"offset": 0, "length": 742}
-org,httpbin)/post?__wb_method=post&another=more^data&test=some+data 20200809195334 {"offset": 742, "length": 416}
+com,example)/ 20140102000000 {"offset": 0, "length": 784}
+org,httpbin)/post?__wb_method=post&data=^&foo=bar 20140610001255 {"offset": 784, "length": 321}
 """
         assert res == exp % "comp.cdxj.gz"
 
