@@ -84,13 +84,13 @@ com,example)/ 20170306040348 http://example.com/ warc/revisit 200 G7HRM7BGOKSKMS
         assert res == exp
 
     def test_warc_cdx_11_avoid_dupe_line(self):
-        res = self.index_file('', cdx11=True, sort=True)
+        res = self.index_file("", cdx11=True, sort=True)
         lines = res.split("\n")
         assert lines[0] == " CDX N b a m s k r M S V g"
         assert lines[1] != " CDX N b a m s k r M S V g"
 
     def test_index_multiple_files(self):
-        res = self.index_all(["example.warc.gz",  "post-test.warc.gz"])
+        res = self.index_all(["example.warc.gz", "post-test.warc.gz"])
         assert len(res.strip().split("\n")) == 5
 
     def test_warc_request_only(self):
@@ -162,7 +162,8 @@ org,httpbin)/post?__wb_method=post&__wb_post_data=c29tzwnodw5rlwvuy29kzwrkyxrh 2
     def test_warc_cdxj_compressed_1(self):
         # specify file directly
         with tempfile.TemporaryFile() as temp_fh:
-            res = self.index_file('',
+            res = self.index_file(
+                "",
                 sort=True,
                 post_append=True,
                 compress=temp_fh,
@@ -179,8 +180,8 @@ org,httpbin)/post?__wb_method=post&data=^&foo=bar 20140610001255 {"offset": 784,
 
         # specify named temp file, extension auto-added
         with tempfile.NamedTemporaryFile() as temp_fh:
-            res = self.index_file('',
-                sort=True, post_append=True, compress=temp_fh.name, lines=11
+            res = self.index_file(
+                "", sort=True, post_append=True, compress=temp_fh.name, lines=11
             )
             name = temp_fh.name
 
@@ -188,8 +189,8 @@ org,httpbin)/post?__wb_method=post&data=^&foo=bar 20140610001255 {"offset": 784,
 
         # specify named temp file, with extension suffix
         with tempfile.NamedTemporaryFile(suffix=".cdxj.gz") as temp2_fh:
-            res = self.index_file('',
-                sort=True, post_append=True, compress=temp2_fh.name, lines=11
+            res = self.index_file(
+                "", sort=True, post_append=True, compress=temp2_fh.name, lines=11
             )
             name = temp2_fh.name
 
@@ -269,9 +270,11 @@ org,commoncrawl)/ 20170722005011 {"mime": "application/warc-fields", "warc-type"
 
 class CustomIndexer(CDXJIndexer):
     def process_index_entry(self, it, record, *args):
-        type_ = record.rec_headers.get('WARC-Type')
-        if type_ == 'response' and record.http_headers.get('Content-Type').startswith('text/html'):
-            assert record.buffered_stream.read() != b''
+        type_ = record.rec_headers.get("WARC-Type")
+        if type_ == "response" and record.http_headers.get("Content-Type").startswith(
+            "text/html"
+        ):
+            assert record.buffered_stream.read() != b""
 
 
 def test_custom_indexer():
@@ -279,9 +282,9 @@ def test_custom_indexer():
     indexer = CustomIndexer(
         output=output,
         inputs=[os.path.join(TEST_DIR, "example.warc.gz")],
-        fields="referrer")
+        fields="referrer",
+    )
 
     assert indexer.collect_records
 
     indexer.process_all()
-
