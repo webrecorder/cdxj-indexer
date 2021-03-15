@@ -48,6 +48,8 @@ setup(
     install_requires=[
         "warcio",
         "surt",
+        # temp fix for requests
+        "idna<3.0",
     ],
     zip_safe=True,
     entry_points="""
