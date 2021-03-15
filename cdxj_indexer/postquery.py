@@ -60,12 +60,12 @@ def query_extract(mime, length, stream, url):
     def handle_binary(query):
         query = base64.b64encode(query)
         query = to_native_str(query)
-        query = '__wb_post_data=' + query
+        query = "__wb_post_data=" + query
         return query
 
-    if mime.startswith('application/x-www-form-urlencoded'):
+    if mime.startswith("application/x-www-form-urlencoded"):
         try:
-            query = to_native_str(query.decode('utf-8'))
+            query = to_native_str(query.decode("utf-8"))
             query = unquote_plus(query)
         except UnicodeDecodeError:
             query = handle_binary(query)
@@ -89,16 +89,17 @@ def query_extract(mime, length, stream, url):
 
         query = urlencode(values, True)
 
-    elif mime.startswith('application/json'):
+    elif mime.startswith("application/json"):
         query = json_parse(query.decode("utf-8"), True)
 
-    elif mime.startswith('text/plain'):
+    elif mime.startswith("text/plain"):
         query = json_parse(query.decode("utf-8"), False)
 
     else:
         query = handle_binary(query)
 
     return query
+
 
 def json_parse(string, warn_on_error=False):
     data = {}
@@ -117,6 +118,3 @@ def json_parse(string, warn_on_error=False):
             print(e)
 
     return urlencode(data)
-
-
-

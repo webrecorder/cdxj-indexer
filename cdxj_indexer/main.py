@@ -49,7 +49,7 @@ class CDXJIndexer(Indexer):
 
     ALLOWED_EXT = (".arc", ".arc.gz", ".warc", ".warc.gz")
 
-    RE_SPACE = re.compile(r'[;\s]')
+    RE_SPACE = re.compile(r"[;\s]")
 
     def __init__(
         self,
@@ -225,8 +225,22 @@ class CDXJIndexer(Indexer):
             wrap_it = it
 
         for record in wrap_it:
-            if not self.include_records or record.rec_type in self.include_records:
+            if not self.include_records or self.filter_record(record):
                 self.process_index_entry(it, record, filename, output)
+
+    def filter_record(self, record):
+        if not record.rec_type in self.include_records:
+            return False
+
+        if (
+            self.include_records == self.DEFAULT_RECORDS
+            and record.rec_type in ("resource", "metadata")
+            and record.rec_headers.get_header("Content-Type")
+            == "application/warc-fields"
+        ):
+            return False
+
+        return True
 
     def _get_digest(self, record, name):
         value = record.rec_headers.get(name)
@@ -303,14 +317,13 @@ class CDXJIndexer(Indexer):
         shutil.copyfileobj(record.content_stream(), spool)
         spool.seek(0)
         record.buffered_stream = spool
-        #record.buffered_stream = BytesIO(record.content_stream().read())
-
+        # record.buffered_stream = BytesIO(record.content_stream().read())
 
     def req_resolving_iter(self, record_iter):
         prev_record = None
 
         for record in record_iter:
-            #if record.rec_type == "request":
+            # if record.rec_type == "request":
             self.read_content(record)
 
             record.file_offset = record_iter.get_record_offset()

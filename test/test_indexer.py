@@ -53,7 +53,6 @@ com,example)/ 20170306040348 {"url": "http://example.com/", "mime": "warc/revisi
     def test_warc_cdxj_sorted(self):
         res = self.index_file("cc.warc.gz", sort=True)
         exp = """\
-org,commoncrawl)/ 20170722005011 {"url": "https://commoncrawl.org/", "mime": "application/warc-fields", "digest": "ZU3CTSUL7QLZI6AWP375VTGTXT7T3BEC", "length": "288", "offset": "5734", "filename": "cc.warc.gz"}
 org,commoncrawl)/ 20170722005011 {"url": "https://commoncrawl.org/", "mime": "text/html", "status": "200", "digest": "RXZILWL37W7MAZTH76FEVIHSF2DZ5HTM", "length": "5357", "offset": "377", "filename": "cc.warc.gz"}
 """
         assert res == exp
@@ -85,13 +84,13 @@ com,example)/ 20170306040348 http://example.com/ warc/revisit 200 G7HRM7BGOKSKMS
         assert res == exp
 
     def test_warc_cdx_11_avoid_dupe_line(self):
-        res = self.index_file('', cdx11=True, sort=True)
+        res = self.index_file("", cdx11=True, sort=True)
         lines = res.split("\n")
         assert lines[0] == " CDX N b a m s k r M S V g"
         assert lines[1] != " CDX N b a m s k r M S V g"
 
     def test_index_multiple_files(self):
-        res = self.index_all(["example.warc.gz",  "post-test.warc.gz"])
+        res = self.index_all(["example.warc.gz", "post-test.warc.gz"])
         assert len(res.strip().split("\n")) == 5
 
     def test_warc_request_only(self):
@@ -163,7 +162,8 @@ org,httpbin)/post?__wb_method=post&__wb_post_data=c29tzwnodw5rlwvuy29kzwrkyxrh 2
     def test_warc_cdxj_compressed_1(self):
         # specify file directly
         with tempfile.TemporaryFile() as temp_fh:
-            res = self.index_file('',
+            res = self.index_file(
+                "",
                 sort=True,
                 post_append=True,
                 compress=temp_fh,
@@ -173,15 +173,15 @@ org,httpbin)/post?__wb_method=post&__wb_post_data=c29tzwnodw5rlwvuy29kzwrkyxrh 2
 
         exp = """\
 !meta 0 {"format": "cdxj-gzip-1.0", "filename": "%s"}
-com,example)/ 20140102000000 {"offset": 0, "length": 742}
-org,httpbin)/post?__wb_method=post&another=more^data&test=some+data 20200809195334 {"offset": 742, "length": 416}
+com,example)/ 20140102000000 {"offset": 0, "length": 784}
+org,httpbin)/post?__wb_method=post&data=^&foo=bar 20140610001255 {"offset": 784, "length": 321}
 """
         assert res == exp % "comp.cdxj.gz"
 
         # specify named temp file, extension auto-added
         with tempfile.NamedTemporaryFile() as temp_fh:
-            res = self.index_file('',
-                sort=True, post_append=True, compress=temp_fh.name, lines=11
+            res = self.index_file(
+                "", sort=True, post_append=True, compress=temp_fh.name, lines=11
             )
             name = temp_fh.name
 
@@ -189,8 +189,8 @@ org,httpbin)/post?__wb_method=post&another=more^data&test=some+data 202008091953
 
         # specify named temp file, with extension suffix
         with tempfile.NamedTemporaryFile(suffix=".cdxj.gz") as temp2_fh:
-            res = self.index_file('',
-                sort=True, post_append=True, compress=temp2_fh.name, lines=11
+            res = self.index_file(
+                "", sort=True, post_append=True, compress=temp2_fh.name, lines=11
             )
             name = temp2_fh.name
 
@@ -270,9 +270,11 @@ org,commoncrawl)/ 20170722005011 {"mime": "application/warc-fields", "warc-type"
 
 class CustomIndexer(CDXJIndexer):
     def process_index_entry(self, it, record, *args):
-        type_ = record.rec_headers.get('WARC-Type')
-        if type_ == 'response' and record.http_headers.get('Content-Type').startswith('text/html'):
-            assert record.buffered_stream.read() != b''
+        type_ = record.rec_headers.get("WARC-Type")
+        if type_ == "response" and record.http_headers.get("Content-Type").startswith(
+            "text/html"
+        ):
+            assert record.buffered_stream.read() != b""
 
 
 def test_custom_indexer():
@@ -280,9 +282,9 @@ def test_custom_indexer():
     indexer = CustomIndexer(
         output=output,
         inputs=[os.path.join(TEST_DIR, "example.warc.gz")],
-        fields="referrer")
+        fields="referrer",
+    )
 
     assert indexer.collect_records
 
     indexer.process_all()
-

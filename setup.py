@@ -5,7 +5,7 @@ from setuptools import setup, find_packages
 from setuptools.command.test import test as TestCommand
 import glob
 
-__version__ = "1.2.0"
+__version__ = "1.3.0"
 
 
 class PyTest(TestCommand):
@@ -42,8 +42,13 @@ setup(
     url="https://github.com/webrecorder/cdxj-indexer",
     description="CDXJ Indexer for WARC and ARC files",
     long_description=open("README.rst").read(),
-    provides=["cdxj_indexer",],
-    install_requires=["warcio", "surt",],
+    provides=[
+        "cdxj_indexer",
+    ],
+    install_requires=[
+        "warcio",
+        "surt",
+    ],
     zip_safe=True,
     entry_points="""
         [console_scripts]
@@ -51,7 +56,10 @@ setup(
     """,
     cmdclass={"test": PyTest},
     test_suite="",
-    tests_require=["pytest", "pytest-cov",],
+    tests_require=[
+        "pytest",
+        "pytest-cov",
+    ],
     classifiers=[
         "Development Status :: 4 - Beta",
         "Environment :: Web Environment",
