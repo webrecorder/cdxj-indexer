@@ -7,7 +7,7 @@ from warcio.archiveiterator import ArchiveIterator
 from warcio.utils import open_or_default
 
 from argparse import ArgumentParser, RawTextHelpFormatter
-from cdxj_indexer.postquery import append_method_query
+from cdxj_indexer.postquery import append_method_query_from_req_resp
 
 from io import BytesIO
 from copy import copy
@@ -21,6 +21,7 @@ import shutil
 import sys
 import tempfile
 import zlib
+import hashlib
 
 
 # ============================================================================
@@ -31,6 +32,7 @@ class CDXJIndexer(Indexer):
         "warc-payload-digest": "digest",
         "req.http:referer": "referrer",
         "req.http:method": "method",
+        "record-digest": "recordDigest",
     }
 
     inv_field_names = {k: v for v, k in field_names.items()}
@@ -51,6 +53,10 @@ class CDXJIndexer(Indexer):
 
     RE_SPACE = re.compile(r"[;\s]")
 
+    BUFF_SIZE = 1024 * 64
+
+    DEFAULT_NUM_LINES = 300
+
     def __init__(
         self,
         output,
@@ -58,7 +64,7 @@ class CDXJIndexer(Indexer):
         post_append=False,
         sort=False,
         compress=None,
-        lines=300,
+        lines=DEFAULT_NUM_LINES,
         data_out_name=None,
         filename=None,
         fields=None,
@@ -66,6 +72,7 @@ class CDXJIndexer(Indexer):
         records=None,
         verify_http=False,
         dir_root=None,
+        digest_records=False,
         **kwargs
     ):
 
@@ -74,6 +81,7 @@ class CDXJIndexer(Indexer):
 
         inputs = iter_file_or_dir(inputs)
 
+        self.digest_records = digest_records
         fields = self._parse_fields(fields, replace_fields)
 
         super(CDXJIndexer, self).__init__(
@@ -112,6 +120,9 @@ class CDXJIndexer(Indexer):
             add_fields = fields
             fields = copy(self.DEFAULT_FIELDS)
 
+        if self.digest_records and "record-digest" not in fields:
+            fields.append("record-digest")
+
         if add_fields:
             add_fields = add_fields.split(",")
             for field in add_fields:
@@ -142,6 +153,8 @@ class CDXJIndexer(Indexer):
                 return str(record.file_offset)
             elif name == "length":
                 return str(record.file_length)
+            elif name == "record-digest":
+                return str(record.record_digest)
             elif name.startswith("req.http:"):
                 value = self._get_req_field(name, record)
                 if value:
@@ -182,6 +195,7 @@ class CDXJIndexer(Indexer):
                         data_out=data_out,
                         data_out_name=self.compress,
                         num_lines=self.num_lines,
+                        digest_records=self.digest_records,
                     )
                 else:
                     fh = CompressedWriter(
@@ -189,6 +203,7 @@ class CDXJIndexer(Indexer):
                         data_out=self.compress,
                         data_out_name=self.data_out_name,
                         num_lines=self.num_lines,
+                        digest_records=self.digest_records,
                     )
 
             if self.sort:
@@ -215,12 +230,14 @@ class CDXJIndexer(Indexer):
     def process_one(self, input_, output, filename):
         self.curr_filename = self.force_filename or self._resolve_rel_path(filename)
 
+        # input_ = DigestReader(input_)
+
         it = self._create_record_iter(input_)
 
         self._write_header(output, filename)
 
         if self.collect_records:
-            wrap_it = self.req_resolving_iter(it)
+            wrap_it = self.req_resolving_iter(it, input_)
         else:
             wrap_it = it
 
@@ -251,8 +268,8 @@ class CDXJIndexer(Indexer):
             self.writer.ensure_digest(record, block=False, payload=True)
             value = record.rec_headers.get(name)
 
-        if value:
-            value = value.split(":")[-1]
+        # if value:
+        #    value = value.split(":")[-1]
         return value
 
     def _write_line(self, out, index, record, filename):
@@ -319,15 +336,33 @@ class CDXJIndexer(Indexer):
         record.buffered_stream = spool
         # record.buffered_stream = BytesIO(record.content_stream().read())
 
-    def req_resolving_iter(self, record_iter):
+    def req_resolving_iter(self, record_iter, digest_reader):
         prev_record = None
 
         for record in record_iter:
+
             # if record.rec_type == "request":
             self.read_content(record)
 
             record.file_offset = record_iter.get_record_offset()
             record.file_length = record_iter.get_record_length()
+
+            if digest_reader and self.digest_records:
+                curr = digest_reader.tell()
+                digest_reader.seek(record.file_offset)
+                record_digest, digest_length = self.digest_block(
+                    digest_reader, record.file_length
+                )
+                digest_reader.seek(curr)
+
+                if digest_length != record.file_length:
+                    raise Exception(
+                        "Digest block mismatch, expected {0}, got {1}",
+                        record.file_length,
+                        len(buff),
+                    )
+
+                record.record_digest = record_digest
 
             req, resp = self._concur_req_resp(prev_record, record)
 
@@ -356,11 +391,25 @@ class CDXJIndexer(Indexer):
         method = req.http_headers.protocol
         if self.post_append and method.upper() in ("POST", "PUT"):
             url = req.rec_headers.get_header("WARC-Target-URI")
-            query, append_str = append_method_query(req, resp)
+            query, append_str = append_method_query_from_req_resp(req, resp)
             resp.method = method.upper()
             resp.requestBody = query
             resp.urlkey = self.get_url_key(url + append_str)
             req.urlkey = resp.urlkey
+
+    def digest_block(self, reader, length):
+        count = 0
+        hasher = hashlib.sha256()
+
+        while length > 0:
+            buff = reader.read(min(self.BUFF_SIZE, length))
+            if not buff:
+                break
+            hasher.update(buff)
+            length -= len(buff)
+            count += len(buff)
+
+        return "sha256:" + hasher.hexdigest(), count
 
 
 # ============================================================================
@@ -374,6 +423,14 @@ class CDXLegacyIndexer(CDXJIndexer):
 
     def _write_header(self, out, filename):
         out.write(self.CDX_HEADER + "\n")
+
+    def get_field(self, record, name, it, filename):
+        value = super().get_field(record, name, it, filename)
+
+        if name == "warc-payload-digest":
+            value = value.split(":")[-1]
+
+        return value
 
 
 # ============================================================================
@@ -434,10 +491,18 @@ class SortingWriter:
 
 # ============================================================================
 class CompressedWriter:
-    def __init__(self, index_out, data_out, num_lines=300, data_out_name=""):
+    def __init__(
+        self,
+        index_out,
+        data_out,
+        num_lines=CDXJIndexer.DEFAULT_NUM_LINES,
+        data_out_name="",
+        digest_records=False,
+    ):
         self.index_out = index_out
         self.data_out = data_out
         self.data_out_name = data_out_name
+        self.digest_records = digest_records
 
         self.block = []
         self.offset = 0
@@ -460,8 +525,10 @@ class CompressedWriter:
         if len(self.block) == self.num_lines:
             self.flush()
 
-    def get_index_json(self, length):
+    def get_index_json(self, length, digest):
         data = {"offset": self.offset, "length": length}
+        if digest:
+            data["digest"] = digest
 
         return json.dumps(data) + "\n"
 
@@ -471,7 +538,12 @@ class CompressedWriter:
         compressed += comp.flush()
 
         length = len(compressed)
-        line = self.prefix + " " + self.get_index_json(length)
+        digest = (
+            "sha256:" + hashlib.sha256(compressed).hexdigest()
+            if self.digest_records
+            else None
+        )
+        line = self.prefix + " " + self.get_index_json(length, digest)
         self.index_out.write(line)
         self.data_out.write(compressed)
         self.offset += length
@@ -505,7 +577,9 @@ def main(args=None):
 
     parser.add_argument("-c", "--compress")
 
-    parser.add_argument("-l", "--lines", type=int, default=300)
+    parser.add_argument("-l", "--lines", type=int, default=CDXJIndexer.DEFAULT_NUM_LINES)
+
+    parser.add_argument("-d", "--digest-records", action="store_true")
 
     cmd = parser.parse_args(args=args)
 
