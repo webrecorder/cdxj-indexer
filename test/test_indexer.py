@@ -226,7 +226,7 @@ org,httpbin)/post?__wb_method=post&data=^&foo=bar 20140610001255 {"offset": 790,
                 compress=temp_fh,
                 data_out_name="comp_2.cdxj.gz",
                 lines=11,
-                digest_records=True
+                digest_records=True,
             )
 
         exp = """\
@@ -239,7 +239,12 @@ org,httpbin)/post?__wb_method=post&data=^&foo=bar 20140610001255 {"offset": 1292
         # specify named temp file, extension auto-added
         with tempfile.NamedTemporaryFile() as temp_fh:
             res = self.index_file(
-                "", sort=True, post_append=True, compress=temp_fh.name, lines=11, digest_records=True
+                "",
+                sort=True,
+                post_append=True,
+                compress=temp_fh.name,
+                lines=11,
+                digest_records=True,
             )
             name = temp_fh.name
 
@@ -248,13 +253,16 @@ org,httpbin)/post?__wb_method=post&data=^&foo=bar 20140610001255 {"offset": 1292
         # specify named temp file, with extension suffix
         with tempfile.NamedTemporaryFile(suffix=".cdxj.gz") as temp2_fh:
             res = self.index_file(
-                "", sort=True, post_append=True, compress=temp2_fh.name, lines=11, digest_records=True
+                "",
+                sort=True,
+                post_append=True,
+                compress=temp2_fh.name,
+                lines=11,
+                digest_records=True,
             )
             name = temp2_fh.name
 
         assert res == exp % name
-
-
 
     def test_warc_index_add_custom_fields(self):
         res = self.index_file("example.warc.gz", fields="method,referrer,http:date")

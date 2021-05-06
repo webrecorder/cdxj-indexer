@@ -7,7 +7,6 @@ from six.moves.urllib.parse import urlencode
 
 
 class Amf:
-
     @staticmethod
     def get_representation(request_object, max_calls=500):
 
@@ -23,7 +22,9 @@ class Amf:
                 bodies.append(Amf.get_representation(i[1], max_calls))
             bodies = sorted(bodies)
 
-            return "<Envelope>{bodies}</Envelope>".format(bodies="[" + ",".join(bodies) + "]")
+            return "<Envelope>{bodies}</Envelope>".format(
+                bodies="[" + ",".join(bodies) + "]"
+            )
 
         elif isinstance(request_object, Request):
             # Remove cyclic reference
@@ -35,7 +36,9 @@ class Amf:
             # Remove random properties
             operation = request_object.operation
             body = Amf.get_representation(request_object.body, max_calls)
-            return "<RemotingMessage operation={operation}>{body}</RemotingMessage>".format(**locals())
+            return "<RemotingMessage operation={operation}>{body}</RemotingMessage>".format(
+                **locals()
+            )
 
         elif isinstance(request_object, dict):
             return json.dumps(request_object, sort_keys=True)
@@ -57,10 +60,12 @@ class Amf:
             properties = request_object.__dict__
             bodies = dict()
             for prop in properties:
-                bodies[prop] = Amf.get_representation(getattr(request_object, prop), max_calls)
+                bodies[prop] = Amf.get_representation(
+                    getattr(request_object, prop), max_calls
+                )
             bodies = Amf.get_representation(bodies, max_calls)
 
-            return '<{classname}>{bodies}</{classname}>'.format(**locals())
+            return "<{classname}>{bodies}</{classname}>".format(**locals())
 
         else:
             return repr(request_object)
@@ -73,8 +78,7 @@ def amf_parse(string):
 
     except Exception as e:
         import traceback
+
         traceback.print_exc()
         print(e)
         return None
-
-

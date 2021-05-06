@@ -25,13 +25,13 @@ def append_method_query_from_req_resp(req, resp):
 
 # ============================================================================
 def append_method_query(method, content_type, len_, stream, url):
-    #if method == 'GET':
+    # if method == 'GET':
     #    return '', ''
 
-    if method == 'POST' or method == 'PUT':
+    if method == "POST" or method == "PUT":
         query = query_extract(content_type, len_, stream, url)
     else:
-        query = ''
+        query = ""
 
     if "?" not in url:
         append_str = "?"
@@ -114,20 +114,20 @@ def query_extract(mime, length, stream, url):
 
             query = urlencode(values, True)
 
-    elif mime.startswith('application/json'):
+    elif mime.startswith("application/json"):
         try:
             query = json_parse(query_data)
         except Exception as e:
             print(e)
             query = ""
 
-    elif mime.startswith('text/plain'):
+    elif mime.startswith("text/plain"):
         try:
             query = json_parse(query_data)
         except Exception as e:
             query = handle_binary(query_data)
 
-    elif mime.startswith('application/x-amf'):
+    elif mime.startswith("application/x-amf"):
         query = amf_parse(query_data)
     else:
         query = handle_binary(query_data)
@@ -150,7 +150,7 @@ def json_parse(string):
             dupes[n] = 1
 
         dupes[n] += 1
-        return n + "." + str(dupes[n]) + "_";
+        return n + "." + str(dupes[n]) + "_"
 
     def _parser(dict_var):
         for n, v in dict_var.items():

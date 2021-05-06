@@ -577,7 +577,9 @@ def main(args=None):
 
     parser.add_argument("-c", "--compress")
 
-    parser.add_argument("-l", "--lines", type=int, default=CDXJIndexer.DEFAULT_NUM_LINES)
+    parser.add_argument(
+        "-l", "--lines", type=int, default=CDXJIndexer.DEFAULT_NUM_LINES
+    )
 
     parser.add_argument("-d", "--digest-records", action="store_true")
 
