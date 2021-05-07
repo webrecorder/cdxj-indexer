@@ -230,8 +230,6 @@ class CDXJIndexer(Indexer):
     def process_one(self, input_, output, filename):
         self.curr_filename = self.force_filename or self._resolve_rel_path(filename)
 
-        # input_ = DigestReader(input_)
-
         it = self._create_record_iter(input_)
 
         self._write_header(output, filename)
@@ -268,8 +266,6 @@ class CDXJIndexer(Indexer):
             self.writer.ensure_digest(record, block=False, payload=True)
             value = record.rec_headers.get(name)
 
-        # if value:
-        #    value = value.split(":")[-1]
         return value
 
     def _write_line(self, out, index, record, filename):
