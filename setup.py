@@ -5,7 +5,7 @@ from setuptools import setup, find_packages
 from setuptools.command.test import test as TestCommand
 import glob
 
-__version__ = "1.3.0"
+__version__ = "1.4.0"
 
 
 class PyTest(TestCommand):
@@ -50,6 +50,7 @@ setup(
         "surt",
         # temp fix for requests
         "idna<3.0",
+        "py3amf",
     ],
     zip_safe=True,
     entry_points="""

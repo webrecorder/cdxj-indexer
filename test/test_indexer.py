@@ -29,39 +29,59 @@ class TestIndexing(object):
         write_cdx_index(output, paths, opts)
         return output.getvalue()
 
-    def index_file_cli(self, filename, capsys):
-        res = main([os.path.join(TEST_DIR, filename)])
+    def index_file_cli(self, filename, capsys, extra_params=None):
+        params = [os.path.join(TEST_DIR, filename)]
+        if extra_params:
+            params += extra_params
+
+        res = main(params)
 
         return capsys.readouterr().out
 
     def test_warc_cdxj(self):
         res = self.index_file("example.warc.gz")
         exp = """\
-com,example)/ 20170306040206 {"url": "http://example.com/", "mime": "text/html", "status": "200", "digest": "G7HRM7BGOKSKMSXZAHMUQTTV53QOFSMK", "length": "1242", "offset": "784", "filename": "example.warc.gz"}
-com,example)/ 20170306040348 {"url": "http://example.com/", "mime": "warc/revisit", "status": "200", "digest": "G7HRM7BGOKSKMSXZAHMUQTTV53QOFSMK", "length": "585", "offset": "2635", "filename": "example.warc.gz"}
+com,example)/ 20170306040206 {"url": "http://example.com/", "mime": "text/html", "status": "200", "digest": "sha1:G7HRM7BGOKSKMSXZAHMUQTTV53QOFSMK", "length": "1242", "offset": "784", "filename": "example.warc.gz"}
+com,example)/ 20170306040348 {"url": "http://example.com/", "mime": "warc/revisit", "status": "200", "digest": "sha1:G7HRM7BGOKSKMSXZAHMUQTTV53QOFSMK", "length": "585", "offset": "2635", "filename": "example.warc.gz"}
 """
         assert res == exp
 
     def test_warc_cdxj_cli_main(self, capsys):
         res = self.index_file_cli("example.warc.gz", capsys)
         exp = """\
-com,example)/ 20170306040206 {"url": "http://example.com/", "mime": "text/html", "status": "200", "digest": "G7HRM7BGOKSKMSXZAHMUQTTV53QOFSMK", "length": "1242", "offset": "784", "filename": "example.warc.gz"}
-com,example)/ 20170306040348 {"url": "http://example.com/", "mime": "warc/revisit", "status": "200", "digest": "G7HRM7BGOKSKMSXZAHMUQTTV53QOFSMK", "length": "585", "offset": "2635", "filename": "example.warc.gz"}
+com,example)/ 20170306040206 {"url": "http://example.com/", "mime": "text/html", "status": "200", "digest": "sha1:G7HRM7BGOKSKMSXZAHMUQTTV53QOFSMK", "length": "1242", "offset": "784", "filename": "example.warc.gz"}
+com,example)/ 20170306040348 {"url": "http://example.com/", "mime": "warc/revisit", "status": "200", "digest": "sha1:G7HRM7BGOKSKMSXZAHMUQTTV53QOFSMK", "length": "585", "offset": "2635", "filename": "example.warc.gz"}
+"""
+        assert res == exp
+
+    def test_warc_cdxj_with_record_digests(self):
+        res = self.index_file("example.warc.gz", digest_records=True, post_append=True)
+        exp = """\
+com,example)/ 20170306040206 {"url": "http://example.com/", "mime": "text/html", "status": "200", "digest": "sha1:G7HRM7BGOKSKMSXZAHMUQTTV53QOFSMK", "length": "1242", "offset": "784", "filename": "example.warc.gz", "recordDigest": "sha256:1ebd93871e6de75fb72d5398452e4152cf3d655ae31368e7336c1b57870d244c"}
+com,example)/ 20170306040348 {"url": "http://example.com/", "mime": "warc/revisit", "status": "200", "digest": "sha1:G7HRM7BGOKSKMSXZAHMUQTTV53QOFSMK", "length": "585", "offset": "2635", "filename": "example.warc.gz", "recordDigest": "sha256:f67dfffc2d78d025030574b08ad57211d2d2211ae49d566adf7868072a823f74"}
+"""
+        assert res == exp
+
+    def test_warc_cdxj_cli_main_with_record_digests(self, capsys):
+        res = self.index_file_cli("example.warc.gz", capsys, ["-d", "-p"])
+        exp = """\
+com,example)/ 20170306040206 {"url": "http://example.com/", "mime": "text/html", "status": "200", "digest": "sha1:G7HRM7BGOKSKMSXZAHMUQTTV53QOFSMK", "length": "1242", "offset": "784", "filename": "example.warc.gz", "recordDigest": "sha256:1ebd93871e6de75fb72d5398452e4152cf3d655ae31368e7336c1b57870d244c"}
+com,example)/ 20170306040348 {"url": "http://example.com/", "mime": "warc/revisit", "status": "200", "digest": "sha1:G7HRM7BGOKSKMSXZAHMUQTTV53QOFSMK", "length": "585", "offset": "2635", "filename": "example.warc.gz", "recordDigest": "sha256:f67dfffc2d78d025030574b08ad57211d2d2211ae49d566adf7868072a823f74"}
 """
         assert res == exp
 
     def test_warc_cdxj_sorted(self):
         res = self.index_file("cc.warc.gz", sort=True)
         exp = """\
-org,commoncrawl)/ 20170722005011 {"url": "https://commoncrawl.org/", "mime": "text/html", "status": "200", "digest": "RXZILWL37W7MAZTH76FEVIHSF2DZ5HTM", "length": "5357", "offset": "377", "filename": "cc.warc.gz"}
+org,commoncrawl)/ 20170722005011 {"url": "https://commoncrawl.org/", "mime": "text/html", "status": "200", "digest": "sha1:RXZILWL37W7MAZTH76FEVIHSF2DZ5HTM", "length": "5357", "offset": "377", "filename": "cc.warc.gz"}
 """
         assert res == exp
 
     def test_warc_cdxj_dir_root(self):
         res = self.index_file("example.warc.gz", dir_root="./")
         exp = """\
-com,example)/ 20170306040206 {"url": "http://example.com/", "mime": "text/html", "status": "200", "digest": "G7HRM7BGOKSKMSXZAHMUQTTV53QOFSMK", "length": "1242", "offset": "784", "filename": "test/data/example.warc.gz"}
-com,example)/ 20170306040348 {"url": "http://example.com/", "mime": "warc/revisit", "status": "200", "digest": "G7HRM7BGOKSKMSXZAHMUQTTV53QOFSMK", "length": "585", "offset": "2635", "filename": "test/data/example.warc.gz"}
+com,example)/ 20170306040206 {"url": "http://example.com/", "mime": "text/html", "status": "200", "digest": "sha1:G7HRM7BGOKSKMSXZAHMUQTTV53QOFSMK", "length": "1242", "offset": "784", "filename": "test/data/example.warc.gz"}
+com,example)/ 20170306040348 {"url": "http://example.com/", "mime": "warc/revisit", "status": "200", "digest": "sha1:G7HRM7BGOKSKMSXZAHMUQTTV53QOFSMK", "length": "585", "offset": "2635", "filename": "test/data/example.warc.gz"}
 """
         assert res == exp
 
@@ -96,8 +116,8 @@ com,example)/ 20170306040348 http://example.com/ warc/revisit 200 G7HRM7BGOKSKMS
     def test_warc_request_only(self):
         res = self.index_file("example.warc.gz", records="request", fields="method")
         exp = """\
-com,example)/ 20170306040206 {"url": "http://example.com/", "digest": "3I42H3S6NNFQ2MSVX7XZKYAYSCX5QBYJ", "length": "609", "offset": "2026", "filename": "example.warc.gz", "method": "GET"}
-com,example)/ 20170306040348 {"url": "http://example.com/", "digest": "3I42H3S6NNFQ2MSVX7XZKYAYSCX5QBYJ", "length": "609", "offset": "3220", "filename": "example.warc.gz", "method": "GET"}
+com,example)/ 20170306040206 {"url": "http://example.com/", "digest": "sha1:3I42H3S6NNFQ2MSVX7XZKYAYSCX5QBYJ", "length": "609", "offset": "2026", "filename": "example.warc.gz", "method": "GET"}
+com,example)/ 20170306040348 {"url": "http://example.com/", "digest": "sha1:3I42H3S6NNFQ2MSVX7XZKYAYSCX5QBYJ", "length": "609", "offset": "3220", "filename": "example.warc.gz", "method": "GET"}
 """
         assert res == exp
 
@@ -106,10 +126,10 @@ com,example)/ 20170306040348 {"url": "http://example.com/", "digest": "3I42H3S6N
         exp = """\
 - 20170306040353 {"mime": "application/warc-fields", "length": "353", "offset": "0", "filename": "example.warc.gz"}
 - 20170306040353 {"mime": "application/warc-fields", "length": "431", "offset": "353", "filename": "example.warc.gz"}
-com,example)/ 20170306040206 {"url": "http://example.com/", "mime": "text/html", "status": "200", "digest": "G7HRM7BGOKSKMSXZAHMUQTTV53QOFSMK", "length": "1242", "offset": "784", "filename": "example.warc.gz"}
-com,example)/ 20170306040206 {"url": "http://example.com/", "digest": "3I42H3S6NNFQ2MSVX7XZKYAYSCX5QBYJ", "length": "609", "offset": "2026", "filename": "example.warc.gz"}
-com,example)/ 20170306040348 {"url": "http://example.com/", "mime": "warc/revisit", "status": "200", "digest": "G7HRM7BGOKSKMSXZAHMUQTTV53QOFSMK", "length": "585", "offset": "2635", "filename": "example.warc.gz"}
-com,example)/ 20170306040348 {"url": "http://example.com/", "digest": "3I42H3S6NNFQ2MSVX7XZKYAYSCX5QBYJ", "length": "609", "offset": "3220", "filename": "example.warc.gz"}
+com,example)/ 20170306040206 {"url": "http://example.com/", "mime": "text/html", "status": "200", "digest": "sha1:G7HRM7BGOKSKMSXZAHMUQTTV53QOFSMK", "length": "1242", "offset": "784", "filename": "example.warc.gz"}
+com,example)/ 20170306040206 {"url": "http://example.com/", "digest": "sha1:3I42H3S6NNFQ2MSVX7XZKYAYSCX5QBYJ", "length": "609", "offset": "2026", "filename": "example.warc.gz"}
+com,example)/ 20170306040348 {"url": "http://example.com/", "mime": "warc/revisit", "status": "200", "digest": "sha1:G7HRM7BGOKSKMSXZAHMUQTTV53QOFSMK", "length": "585", "offset": "2635", "filename": "example.warc.gz"}
+com,example)/ 20170306040348 {"url": "http://example.com/", "digest": "sha1:3I42H3S6NNFQ2MSVX7XZKYAYSCX5QBYJ", "length": "609", "offset": "3220", "filename": "example.warc.gz"}
 """
         assert res == exp
 
@@ -119,7 +139,7 @@ com,example)/ 20170306040348 {"url": "http://example.com/", "digest": "3I42H3S6N
     def test_arc_cdxj(self):
         res = self.index_file("example.arc")
         exp = """\
-com,example)/ 20140216050221 {"url": "http://example.com/", "mime": "text/html", "status": "200", "digest": "B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A", "length": "1656", "offset": "151", "filename": "example.arc"}
+com,example)/ 20140216050221 {"url": "http://example.com/", "mime": "text/html", "status": "200", "digest": "sha1:B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A", "length": "1656", "offset": "151", "filename": "example.arc"}
 """
         assert res == exp
 
@@ -136,26 +156,26 @@ com,example)/ 20140401000000 http://example.com/ - - 3I42H3S6NNFQ2MSVX7XZKYAYSCX
     def test_warc_post_query_append(self):
         res = self.index_file("post-test.warc.gz", post_append=True)
         exp = """\
-org,httpbin)/post?__wb_method=post&foo=bar&test=abc 20140610000859 {"url": "http://httpbin.org/post", "mime": "application/json", "status": "200", "digest": "M532K5WS4GY2H4OVZO6HRPOP47A7KDWU", "length": "720", "offset": "0", "filename": "post-test.warc.gz", "requestBody": "foo=bar&test=abc", "method": "POST"}
-org,httpbin)/post?__wb_method=post&a=1&b=[]&c=3 20140610001151 {"url": "http://httpbin.org/post", "mime": "application/json", "status": "200", "digest": "M7YCTM7HS3YKYQTAWQVMQSQZBNEOXGU2", "length": "723", "offset": "1196", "filename": "post-test.warc.gz", "requestBody": "A=1&B=[]&C=3", "method": "POST"}
-org,httpbin)/post?__wb_method=post&data=^&foo=bar 20140610001255 {"url": "http://httpbin.org/post?foo=bar", "mime": "application/json", "status": "200", "digest": "B6E5P6JUZI6UPDTNO4L2BCHMGLTNCUAJ", "length": "723", "offset": "2395", "filename": "post-test.warc.gz", "requestBody": "data=^", "method": "POST"}
+org,httpbin)/post?__wb_method=post&foo=bar&test=abc 20140610000859 {"url": "http://httpbin.org/post", "mime": "application/json", "status": "200", "digest": "sha1:M532K5WS4GY2H4OVZO6HRPOP47A7KDWU", "length": "720", "offset": "0", "filename": "post-test.warc.gz", "requestBody": "foo=bar&test=abc", "method": "POST"}
+org,httpbin)/post?__wb_method=post&a=1&b=[]&c=3 20140610001151 {"url": "http://httpbin.org/post", "mime": "application/json", "status": "200", "digest": "sha1:M7YCTM7HS3YKYQTAWQVMQSQZBNEOXGU2", "length": "723", "offset": "1196", "filename": "post-test.warc.gz", "requestBody": "A=1&B=[]&C=3", "method": "POST"}
+org,httpbin)/post?__wb_method=post&data=^&foo=bar 20140610001255 {"url": "http://httpbin.org/post?foo=bar", "mime": "application/json", "status": "200", "digest": "sha1:B6E5P6JUZI6UPDTNO4L2BCHMGLTNCUAJ", "length": "723", "offset": "2395", "filename": "post-test.warc.gz", "requestBody": "data=^", "method": "POST"}
 """
         assert res == exp
 
         res = self.index_file("post-test.warc.gz")
         exp = """\
-org,httpbin)/post 20140610000859 {"url": "http://httpbin.org/post", "mime": "application/json", "status": "200", "digest": "M532K5WS4GY2H4OVZO6HRPOP47A7KDWU", "length": "720", "offset": "0", "filename": "post-test.warc.gz"}
-org,httpbin)/post 20140610001151 {"url": "http://httpbin.org/post", "mime": "application/json", "status": "200", "digest": "M7YCTM7HS3YKYQTAWQVMQSQZBNEOXGU2", "length": "723", "offset": "1196", "filename": "post-test.warc.gz"}
-org,httpbin)/post?foo=bar 20140610001255 {"url": "http://httpbin.org/post?foo=bar", "mime": "application/json", "status": "200", "digest": "B6E5P6JUZI6UPDTNO4L2BCHMGLTNCUAJ", "length": "723", "offset": "2395", "filename": "post-test.warc.gz"}
+org,httpbin)/post 20140610000859 {"url": "http://httpbin.org/post", "mime": "application/json", "status": "200", "digest": "sha1:M532K5WS4GY2H4OVZO6HRPOP47A7KDWU", "length": "720", "offset": "0", "filename": "post-test.warc.gz"}
+org,httpbin)/post 20140610001151 {"url": "http://httpbin.org/post", "mime": "application/json", "status": "200", "digest": "sha1:M7YCTM7HS3YKYQTAWQVMQSQZBNEOXGU2", "length": "723", "offset": "1196", "filename": "post-test.warc.gz"}
+org,httpbin)/post?foo=bar 20140610001255 {"url": "http://httpbin.org/post?foo=bar", "mime": "application/json", "status": "200", "digest": "sha1:B6E5P6JUZI6UPDTNO4L2BCHMGLTNCUAJ", "length": "723", "offset": "2395", "filename": "post-test.warc.gz"}
 """
         assert res == exp
 
     def test_warc_post_query_append_multi_and_json(self):
         res = self.index_file("post-test-more.warc", post_append=True)
         exp = """\
-org,httpbin)/post?__wb_method=post&another=more^data&test=some+data 20200809195334 {"url": "https://httpbin.org/post", "mime": "application/json", "status": "200", "digest": "7AWVEIPQMCA4KTCNDXWSZ465FITB7LSK", "length": "688", "offset": "0", "filename": "post-test-more.warc", "requestBody": "test=some+data&another=more%5Edata", "method": "POST"}
-org,httpbin)/post?__wb_method=post&a=json-data 20200809195334 {"url": "https://httpbin.org/post", "mime": "application/json", "status": "200", "digest": "BYOQWRSQFW3A5SNUBDSASHFLXGL4FNGB", "length": "655", "offset": "1227", "filename": "post-test-more.warc", "requestBody": "a=json-data", "method": "POST"}
-org,httpbin)/post?__wb_method=post&__wb_post_data=c29tzwnodw5rlwvuy29kzwrkyxrh 20200810055049 {"url": "https://httpbin.org/post", "mime": "application/json", "status": "200", "digest": "34LEADQD3MOBQ42FCO2WA5TUSEL5QOKP", "length": "628", "offset": "2338", "filename": "post-test-more.warc", "requestBody": "__wb_post_data=c29tZWNodW5rLWVuY29kZWRkYXRh", "method": "POST"}
+org,httpbin)/post?__wb_method=post&another=more^data&test=some+data 20200809195334 {"url": "https://httpbin.org/post", "mime": "application/json", "status": "200", "digest": "sha1:7AWVEIPQMCA4KTCNDXWSZ465FITB7LSK", "length": "688", "offset": "0", "filename": "post-test-more.warc", "requestBody": "test=some+data&another=more%5Edata", "method": "POST"}
+org,httpbin)/post?__wb_method=post&a=json-data 20200809195334 {"url": "https://httpbin.org/post", "mime": "application/json", "status": "200", "digest": "sha1:BYOQWRSQFW3A5SNUBDSASHFLXGL4FNGB", "length": "655", "offset": "1227", "filename": "post-test-more.warc", "requestBody": "a=json-data", "method": "POST"}
+org,httpbin)/post?__wb_method=post&__wb_post_data=c29tzwnodw5rlwvuy29kzwrkyxrh 20200810055049 {"url": "https://httpbin.org/post", "mime": "application/json", "status": "200", "digest": "sha1:34LEADQD3MOBQ42FCO2WA5TUSEL5QOKP", "length": "628", "offset": "2338", "filename": "post-test-more.warc", "requestBody": "__wb_post_data=c29tZWNodW5rLWVuY29kZWRkYXRh", "method": "POST"}
 """
         assert res == exp
 
@@ -173,8 +193,8 @@ org,httpbin)/post?__wb_method=post&__wb_post_data=c29tzwnodw5rlwvuy29kzwrkyxrh 2
 
         exp = """\
 !meta 0 {"format": "cdxj-gzip-1.0", "filename": "%s"}
-com,example)/ 20140102000000 {"offset": 0, "length": 784}
-org,httpbin)/post?__wb_method=post&data=^&foo=bar 20140610001255 {"offset": 784, "length": 321}
+com,example)/ 20140102000000 {"offset": 0, "length": 790}
+org,httpbin)/post?__wb_method=post&data=^&foo=bar 20140610001255 {"offset": 790, "length": 325}
 """
         assert res == exp % "comp.cdxj.gz"
 
@@ -196,12 +216,67 @@ org,httpbin)/post?__wb_method=post&data=^&foo=bar 20140610001255 {"offset": 784,
 
         assert res == exp % name
 
+    def test_warc_cdxj_compressed_2_with_digest(self):
+        # specify file directly
+        with tempfile.TemporaryFile() as temp_fh:
+            res = self.index_file(
+                "",
+                sort=True,
+                post_append=True,
+                compress=temp_fh,
+                data_out_name="comp_2.cdxj.gz",
+                lines=11,
+                digest_records=True,
+            )
+
+        lines = res.strip().split("\n")
+
+        assert len(lines) == 3
+        assert (
+            lines[0]
+            == '!meta 0 {"format": "cdxj-gzip-1.0", "filename": "comp_2.cdxj.gz"}'
+        )
+        assert lines[1].startswith(
+            'com,example)/ 20140102000000 {"offset": 0, "length": 1292, "digest": "sha256:'
+        )
+        assert lines[2].startswith(
+            'org,httpbin)/post?__wb_method=post&data=^&foo=bar 20140610001255 {"offset": 1292, "length": 428, "digest": "sha256:'
+        )
+
+        # specify named temp file, extension auto-added
+        with tempfile.NamedTemporaryFile() as temp_fh:
+            res2 = self.index_file(
+                "",
+                sort=True,
+                post_append=True,
+                compress=temp_fh.name,
+                lines=11,
+                digest_records=True,
+            )
+            name = temp_fh.name
+
+        assert res2 == res.replace("comp_2", name)
+
+        # specify named temp file, with extension suffix
+        with tempfile.NamedTemporaryFile(suffix=".cdxj.gz") as temp2_fh:
+            res3 = self.index_file(
+                "",
+                sort=True,
+                post_append=True,
+                compress=temp2_fh.name,
+                lines=11,
+                digest_records=True,
+            )
+            name = temp2_fh.name
+
+        assert res3 == res.replace("comp_2.cdxj.gz", name)
+
     def test_warc_index_add_custom_fields(self):
         res = self.index_file("example.warc.gz", fields="method,referrer,http:date")
 
         exp = """\
-com,example)/ 20170306040206 {"url": "http://example.com/", "mime": "text/html", "status": "200", "digest": "G7HRM7BGOKSKMSXZAHMUQTTV53QOFSMK", "length": "1242", "offset": "784", "filename": "example.warc.gz", "method": "GET", "referrer": "https://webrecorder.io/temp-MJFXHZ4S/temp/recording-session/record/http://example.com/", "http:date": "Mon, 06 Mar 2017 04:02:06 GMT"}
-com,example)/ 20170306040348 {"url": "http://example.com/", "mime": "warc/revisit", "status": "200", "digest": "G7HRM7BGOKSKMSXZAHMUQTTV53QOFSMK", "length": "585", "offset": "2635", "filename": "example.warc.gz", "http:date": "Mon, 06 Mar 2017 04:03:48 GMT"}
+com,example)/ 20170306040206 {"url": "http://example.com/", "mime": "text/html", "status": "200", "digest": "sha1:G7HRM7BGOKSKMSXZAHMUQTTV53QOFSMK", "length": "1242", "offset": "784", "filename": "example.warc.gz", "method": "GET", "referrer": "https://webrecorder.io/temp-MJFXHZ4S/temp/recording-session/record/http://example.com/", "http:date": "Mon, 06 Mar 2017 04:02:06 GMT"}
+com,example)/ 20170306040348 {"url": "http://example.com/", "mime": "warc/revisit", "status": "200", "digest": "sha1:G7HRM7BGOKSKMSXZAHMUQTTV53QOFSMK", "length": "585", "offset": "2635", "filename": "example.warc.gz", "http:date": "Mon, 06 Mar 2017 04:03:48 GMT"}
 """
         assert res == exp
 
