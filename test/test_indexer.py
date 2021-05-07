@@ -229,16 +229,23 @@ org,httpbin)/post?__wb_method=post&data=^&foo=bar 20140610001255 {"offset": 790,
                 digest_records=True,
             )
 
-        exp = """\
-!meta 0 {"format": "cdxj-gzip-1.0", "filename": "%s"}
-com,example)/ 20140102000000 {"offset": 0, "length": 1292, "digest": "sha256:292fe51e52dabf0ceb7a00b878413e5e7820ce3d6aa9de7699cbaffe12723049"}
-org,httpbin)/post?__wb_method=post&data=^&foo=bar 20140610001255 {"offset": 1292, "length": 428, "digest": "sha256:a5aa0ce18f4e147c4ae72c27d6603a14652a621488305dbf6482427de0f19138"}
-"""
-        assert res == exp % "comp_2.cdxj.gz"
+        lines = res.strip().split("\n")
+
+        assert len(lines) == 3
+        assert (
+            lines[0]
+            == '!meta 0 {"format": "cdxj-gzip-1.0", "filename": "comp_2.cdxj.gz"}'
+        )
+        assert lines[1].startswith(
+            'com,example)/ 20140102000000 {"offset": 0, "length": 1292, "digest": "sha256:'
+        )
+        assert lines[2].startswith(
+            'org,httpbin)/post?__wb_method=post&data=^&foo=bar 20140610001255 {"offset": 1292, "length": 428, "digest": "sha256:'
+        )
 
         # specify named temp file, extension auto-added
         with tempfile.NamedTemporaryFile() as temp_fh:
-            res = self.index_file(
+            res2 = self.index_file(
                 "",
                 sort=True,
                 post_append=True,
@@ -248,11 +255,11 @@ org,httpbin)/post?__wb_method=post&data=^&foo=bar 20140610001255 {"offset": 1292
             )
             name = temp_fh.name
 
-        assert res == exp % (name + ".cdxj.gz")
+        assert res2 == res.replace("comp_2", name)
 
         # specify named temp file, with extension suffix
         with tempfile.NamedTemporaryFile(suffix=".cdxj.gz") as temp2_fh:
-            res = self.index_file(
+            res3 = self.index_file(
                 "",
                 sort=True,
                 post_append=True,
@@ -262,7 +269,7 @@ org,httpbin)/post?__wb_method=post&data=^&foo=bar 20140610001255 {"offset": 1292
             )
             name = temp2_fh.name
 
-        assert res == exp % name
+        assert res3 == res.replace("comp_2.cdxj.gz", name)
 
     def test_warc_index_add_custom_fields(self):
         res = self.index_file("example.warc.gz", fields="method,referrer,http:date")
