@@ -8,6 +8,7 @@ from cdxj_indexer.amf import amf_parse
 import base64
 import cgi
 import json
+import traceback
 
 MAX_QUERY_LENGTH = 4096
 
@@ -118,7 +119,7 @@ def query_extract(mime, length, stream, url):
         try:
             query = json_parse(query_data)
         except Exception as e:
-            print(e)
+            traceback.print_exc()
             query = ""
 
     elif mime.startswith("text/plain"):
@@ -152,12 +153,17 @@ def json_parse(string):
         dupes[n] += 1
         return n + "." + str(dupes[n]) + "_"
 
-    def _parser(dict_var):
-        for n, v in dict_var.items():
-            if isinstance(v, dict):
-                _parser(v)
-            else:
-                data[get_key(n)] = str(v)
+    def _parser(json_obj, name=""):
+        if isinstance(json_obj, dict):
+            for n, v in json_obj.items():
+                _parser(v, n)
+
+        elif isinstance(json_obj, list):
+            for v in json_obj:
+                _parser(v, name)
+
+        elif name:
+            data[get_key(name)] = str(json_obj)
 
     _parser(json.loads(string))
     return urlencode(data)

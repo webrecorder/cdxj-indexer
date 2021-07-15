@@ -61,6 +61,18 @@ class TestPostQueryExtract(object):
             == "http://example.com/?__wb_method=POST&a=b&a.2_=2&d=e"
         )
 
+    def test_post_extract_json_top_list(self):
+        post_data = b'[{"a": "b", "c": {"a": 2}}, {"d": "e"}, "ignored", false, null, 0]'
+        mq = MethodQueryCanonicalizer(
+            "POST", "application/json", len(post_data), BytesIO(post_data)
+        )
+
+        assert (
+            mq.append_query("http://example.com/")
+            == "http://example.com/?__wb_method=POST&a=b&a.2_=2&d=e"
+        )
+
+
     def test_put_extract_method(self):
         mq = MethodQueryCanonicalizer(
             "PUT",
