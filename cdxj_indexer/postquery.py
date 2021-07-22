@@ -121,7 +121,9 @@ def query_extract(mime, length, stream, url):
         except Exception as e:
             if query_data:
                 try:
-                    sys.stderr.write("Error parsing: " + query_data.decode("utf-8") + "\n")
+                    sys.stderr.write(
+                        "Error parsing: " + query_data.decode("utf-8") + "\n"
+                    )
                 except:
                     pass
 
@@ -178,6 +180,5 @@ def json_parse(string):
                 _parser(json.loads(line))
         else:
             raise
-
 
     return urlencode(data)
