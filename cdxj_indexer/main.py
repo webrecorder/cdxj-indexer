@@ -326,7 +326,7 @@ class CDXJIndexer(Indexer):
         return req, resp
 
     def read_content(self, record):
-        spool = tempfile.SpooledTemporaryFile()
+        spool = tempfile.SpooledTemporaryFile(max_size=65536, prefix="temprec-")
         shutil.copyfileobj(record.content_stream(), spool)
         spool.seek(0)
         record.buffered_stream = spool
