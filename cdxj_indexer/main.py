@@ -1,4 +1,17 @@
 from __future__ import absolute_import
+import json
+import surt
+import logging
+import os
+import re
+import sys
+import zlib
+import hashlib
+
+from argparse import ArgumentParser, RawTextHelpFormatter
+from io import BytesIO
+from copy import copy
+
 
 from warcio.indexer import Indexer
 from warcio.timeutils import iso_date_to_timestamp
@@ -6,22 +19,7 @@ from warcio.warcwriter import BufferWARCWriter
 from warcio.archiveiterator import ArchiveIterator
 from warcio.utils import open_or_default
 
-from argparse import ArgumentParser, RawTextHelpFormatter
-from cdxj_indexer.postquery import append_method_query_from_req_resp
-
-from io import BytesIO
-from copy import copy
-
-import json
-import surt
-import logging
-import os
-import re
-import shutil
-import sys
-import tempfile
-import zlib
-import hashlib
+from cdxj_indexer.bufferiter import buffering_record_iter
 
 
 # ============================================================================
@@ -52,8 +50,6 @@ class CDXJIndexer(Indexer):
     ALLOWED_EXT = (".arc", ".arc.gz", ".warc", ".warc.gz")
 
     RE_SPACE = re.compile(r"[;\s]")
-
-    BUFF_SIZE = 1024 * 64
 
     DEFAULT_NUM_LINES = 300
 
@@ -235,7 +231,13 @@ class CDXJIndexer(Indexer):
         self._write_header(output, filename)
 
         if self.collect_records:
-            wrap_it = self.req_resolving_iter(it, input_)
+            digest_reader = input_ if self.digest_records else None
+            wrap_it = buffering_record_iter(
+                it,
+                post_append=self.post_append,
+                digest_reader=digest_reader,
+                url_key_func=self.get_url_key,
+            )
         else:
             wrap_it = it
 
@@ -297,115 +299,6 @@ class CDXJIndexer(Indexer):
             return surt.surt(url)
         except:  # pragma: no coverage
             return url
-
-    def _concur_req_resp(self, rec_1, rec_2):
-        if not rec_1 or not rec_2:
-            return None, None
-
-        if rec_1.rec_headers.get_header(
-            "WARC-Target-URI"
-        ) != rec_2.rec_headers.get_header("WARC-Target-URI"):
-            return None, None
-
-        if rec_2.rec_headers.get_header(
-            "WARC-Concurrent-To"
-        ) != rec_1.rec_headers.get_header("WARC-Record-ID"):
-            return None, None
-
-        if rec_1.rec_type == "response" and rec_2.rec_type == "request":
-            req = rec_2
-            resp = rec_1
-
-        elif rec_1.rec_type == "request" and rec_2.rec_type == "response":
-            req = rec_1
-            resp = rec_2
-
-        else:
-            return None, None
-
-        return req, resp
-
-    def read_content(self, record):
-        spool = tempfile.SpooledTemporaryFile()
-        shutil.copyfileobj(record.content_stream(), spool)
-        spool.seek(0)
-        record.buffered_stream = spool
-        # record.buffered_stream = BytesIO(record.content_stream().read())
-
-    def req_resolving_iter(self, record_iter, digest_reader):
-        prev_record = None
-
-        for record in record_iter:
-
-            # if record.rec_type == "request":
-            self.read_content(record)
-
-            record.file_offset = record_iter.get_record_offset()
-            record.file_length = record_iter.get_record_length()
-
-            if digest_reader and self.digest_records:
-                curr = digest_reader.tell()
-                digest_reader.seek(record.file_offset)
-                record_digest, digest_length = self.digest_block(
-                    digest_reader, record.file_length
-                )
-                digest_reader.seek(curr)
-
-                if digest_length != record.file_length:
-                    raise Exception(
-                        "Digest block mismatch, expected {0}, got {1}",
-                        record.file_length,
-                        len(buff),
-                    )
-
-                record.record_digest = record_digest
-
-            req, resp = self._concur_req_resp(prev_record, record)
-
-            if not req or not resp:
-                if prev_record:
-                    yield prev_record
-                    prev_record.buffered_stream.close()
-                prev_record = record
-                continue
-
-            self._join_req_resp(req, resp)
-
-            yield prev_record
-            prev_record.buffered_stream.close()
-            yield record
-            record.buffered_stream.close()
-            prev_record = None
-
-        if prev_record:
-            yield prev_record
-            prev_record.buffered_stream.close()
-
-    def _join_req_resp(self, req, resp):
-        resp.req = req
-
-        method = req.http_headers.protocol
-        if self.post_append and method.upper() in ("POST", "PUT"):
-            url = req.rec_headers.get_header("WARC-Target-URI")
-            query, append_str = append_method_query_from_req_resp(req, resp)
-            resp.method = method.upper()
-            resp.requestBody = query
-            resp.urlkey = self.get_url_key(url + append_str)
-            req.urlkey = resp.urlkey
-
-    def digest_block(self, reader, length):
-        count = 0
-        hasher = hashlib.sha256()
-
-        while length > 0:
-            buff = reader.read(min(self.BUFF_SIZE, length))
-            if not buff:
-                break
-            hasher.update(buff)
-            length -= len(buff)
-            count += len(buff)
-
-        return "sha256:" + hasher.hexdigest(), count
 
 
 # ============================================================================
