@@ -30,10 +30,10 @@ def buffering_record_iter(
 
             if digest_length != record.file_length:
                 raise Exception(
-                    "Digest block mismatch, expected {0}, got {1}",
+                    "Digest block mismatch, expected {0}, got {1}".format(
                     record.file_length,
-                    len(buff),
-                )
+                    digest_length,
+                ))
 
             record.record_digest = record_digest
 
