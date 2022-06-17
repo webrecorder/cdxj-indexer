@@ -193,8 +193,8 @@ org,httpbin)/post?__wb_method=post&__wb_post_data=c29tzwnodw5rlwvuy29kzwrkyxrh 2
 
         exp = """\
 !meta 0 {"format": "cdxj-gzip-1.0", "filename": "%s"}
-com,example)/ 20140102000000 {"offset": 0, "length": 790}
-org,httpbin)/post?__wb_method=post&data=^&foo=bar 20140610001255 {"offset": 790, "length": 325}
+com,example)/ 20140102000000 {"offset": 0, "length": 819}
+org,httpbin)/post?__wb_method=post&another=more^data&test=some+data 20200809195334 {"offset": 819, "length": 420}
 """
         assert res == exp % "comp.cdxj.gz"
 
@@ -237,10 +237,10 @@ org,httpbin)/post?__wb_method=post&data=^&foo=bar 20140610001255 {"offset": 790,
             == '!meta 0 {"format": "cdxj-gzip-1.0", "filename": "comp_2.cdxj.gz"}'
         )
         assert lines[1].startswith(
-            'com,example)/ 20140102000000 {"offset": 0, "length": 1292, "digest": "sha256:'
+            'com,example)/ 20140102000000 {"offset": 0, "length": 1319, "digest": "sha256:'
         )
         assert lines[2].startswith(
-            'org,httpbin)/post?__wb_method=post&data=^&foo=bar 20140610001255 {"offset": 1292, "length": 428, "digest": "sha256:'
+            'org,httpbin)/post?__wb_method=post&another=more^data&test=some+data 20200809195334 {"offset": 1319, "length": 570, "digest": "sha256:'
         )
 
         # specify named temp file, extension auto-added
@@ -341,6 +341,14 @@ org,commoncrawl)/ 20170722005011 {"mime": "application/warc-fields", "warc-type"
         lines = output.getvalue().rstrip().split("\n")
 
         assert len(lines) == 4, lines
+
+    def test_missing_http(self):
+        res = self.index_file("missing-http.warc.gz", post=True)
+
+        exp = """\
+com,zoubanio,img1)/icon/u3927203-87.jpg 20170430113919 {"url": "https://img1.zoubanio.com/icon/u3927203-87.jpg", "digest": "sha1:FARQCVFYY7UZ5O5ZKSERUXHUUGEGL4IO", "length": "307", "offset": "0", "filename": "missing-http.warc.gz"}
+"""
+        assert res == exp
 
 
 class CustomIndexer(CDXJIndexer):

@@ -99,6 +99,9 @@ def buffer_record_content(record):
 
 # ============================================================================
 def join_req_resp(req, resp, post_append, url_key_func=None):
+    if req.http_headers is None:
+        return
+
     resp.req = req
 
     method = req.http_headers.protocol
