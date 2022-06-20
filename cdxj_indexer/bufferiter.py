@@ -91,7 +91,7 @@ def concur_req_resp(rec_1, rec_2):
 
 # ============================================================================
 def buffer_record_content(record):
-    spool = tempfile.SpooledTemporaryFile()
+    spool = tempfile.SpooledTemporaryFile(BUFF_SIZE)
     shutil.copyfileobj(record.content_stream(), spool)
     spool.seek(0)
     record.buffered_stream = spool

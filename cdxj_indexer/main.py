@@ -7,10 +7,12 @@ import re
 import sys
 import zlib
 import hashlib
+import heapq
 
 from argparse import ArgumentParser, RawTextHelpFormatter
 from io import BytesIO
 from copy import copy
+from tempfile import NamedTemporaryFile
 
 
 from warcio.indexer import Indexer
@@ -360,22 +362,51 @@ class CDX09Indexer(CDXLegacyIndexer):
 
 # ============================================================================
 class SortingWriter:
+    MAX_SORT_LINES = 50000
+
     def __init__(self, out):
         self.out = out
         self.sortedlist = []
 
+        self.tmp_files = []
+
     def write(self, line):
         self.sortedlist.append(line)
 
+        if len(self.sortedlist) >= self.MAX_SORT_LINES:
+            self.tmp_files.append(self.flush_to_temp())
+            self.sortedlist = []
+
     def flush(self):
-        self.sortedlist.sort()
-        lastline = None
-        for line in self.sortedlist:
-            if lastline != line:
-                self.out.write(line)
-            lastline = line
+        if len(self.sortedlist) > 0:
+            self.tmp_files.append(self.flush_to_temp())
+
+        self.open_files = [open(name, "rt") for name in self.tmp_files]
+        print("num tmp files", len(self.tmp_files))
+
+        for merged in heapq.merge(*self.open_files):
+            self.out.write(merged)
 
         self.out.flush()
+
+        for out in self.open_files:
+            try:
+                out.close()
+            except:
+                print("error closing", flush=True)
+                pass
+
+    def flush_to_temp(self):
+        self.sortedlist.sort()
+        with NamedTemporaryFile(mode="wt", delete=False) as out:
+            lastline = None
+            for line in self.sortedlist:
+                if lastline != line:
+                    out.write(line)
+                lastline = line
+
+            out.flush()
+            return out.name
 
 
 # ============================================================================
