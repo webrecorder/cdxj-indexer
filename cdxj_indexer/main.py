@@ -21,7 +21,7 @@ from warcio.warcwriter import BufferWARCWriter
 from warcio.archiveiterator import ArchiveIterator
 from warcio.utils import open_or_default
 
-from cdxj_indexer.bufferiter import buffering_record_iter
+from cdxj_indexer.bufferiter import buffering_record_iter, BUFF_SIZE
 
 
 # ============================================================================
@@ -362,18 +362,21 @@ class CDX09Indexer(CDXLegacyIndexer):
 
 # ============================================================================
 class SortingWriter:
-    MAX_SORT_LINES = 50000
+    MAX_IN_MEM_BUFF_SIZE = 1024 * 1024 * 32
 
     def __init__(self, out):
         self.out = out
         self.sortedlist = []
+        self.count = 0
 
         self.tmp_files = []
 
     def write(self, line):
         self.sortedlist.append(line)
+        self.count += len(line)
 
-        if len(self.sortedlist) >= self.MAX_SORT_LINES:
+        if self.count > self.MAX_IN_MEM_BUFF_SIZE:
+            self.count = 0
             self.tmp_files.append(self.flush_to_temp())
             self.sortedlist = []
 
@@ -382,19 +385,21 @@ class SortingWriter:
             self.tmp_files.append(self.flush_to_temp())
 
         self.open_files = [open(name, "rt") for name in self.tmp_files]
-        print("num tmp files", len(self.tmp_files))
 
-        for merged in heapq.merge(*self.open_files):
-            self.out.write(merged)
+        lastline = None
+        for line in heapq.merge(*self.open_files):
+            if lastline != line:
+                self.out.write(line)
+            lastline = line
 
         self.out.flush()
 
-        for out in self.open_files:
+        for out, name in zip(self.open_files, self.tmp_files):
             try:
                 out.close()
+                os.remove(name)
             except:
-                print("error closing", flush=True)
-                pass
+                print("error closing: " + name, flush=True)
 
     def flush_to_temp(self):
         self.sortedlist.sort()
