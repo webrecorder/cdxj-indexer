@@ -63,6 +63,7 @@ class CDXJIndexer(Indexer):
         sort=False,
         compress=None,
         lines=DEFAULT_NUM_LINES,
+        max_sort_buff_size=None,
         data_out_name=None,
         filename=None,
         fields=None,
@@ -93,6 +94,7 @@ class CDXJIndexer(Indexer):
         self.dir_root = dir_root
 
         self.num_lines = lines
+        self.max_sort_buff_size = max_sort_buff_size
         self.sort = sort
         self.compress = compress
         self.data_out_name = data_out_name
@@ -205,7 +207,7 @@ class CDXJIndexer(Indexer):
                     )
 
             if self.sort:
-                fh = SortingWriter(fh)
+                fh = SortingWriter(fh, self.max_sort_buff_size)
 
             self.output = fh
 
@@ -362,12 +364,13 @@ class CDX09Indexer(CDXLegacyIndexer):
 
 # ============================================================================
 class SortingWriter:
-    MAX_IN_MEM_BUFF_SIZE = 1024 * 1024 * 32
+    MAX_SORT_BUFF_SIZE = 1024 * 1024 * 32
 
-    def __init__(self, out):
+    def __init__(self, out, max_sort_buff_size=None):
         self.out = out
         self.sortedlist = []
         self.count = 0
+        self.max_sort_buff_size = max_sort_buff_size or self.MAX_SORT_BUFF_SIZE
 
         self.tmp_files = []
 
@@ -375,43 +378,45 @@ class SortingWriter:
         self.sortedlist.append(line)
         self.count += len(line)
 
-        if self.count > self.MAX_IN_MEM_BUFF_SIZE:
-            self.count = 0
-            self.tmp_files.append(self.flush_to_temp())
+        if self.count > self.max_sort_buff_size:
+            self.tmp_files.append(self.write_to_temp())
             self.sortedlist = []
+            self.count = 0
 
     def flush(self):
+        if not len(self.tmp_files):
+            self.sortedlist.sort()
+            self.write_to_file(self.sortedlist, self.out)
+            return
+
         if len(self.sortedlist) > 0:
-            self.tmp_files.append(self.flush_to_temp())
+            self.tmp_files.append(self.write_to_temp())
+            self.sortedlist = []
+            self.count = 0
 
-        self.open_files = [open(name, "rt") for name in self.tmp_files]
+        open_files = [open(name, "rt") for name in self.tmp_files]
 
-        lastline = None
-        for line in heapq.merge(*self.open_files):
-            if lastline != line:
-                self.out.write(line)
-            lastline = line
+        self.write_to_file(heapq.merge(*open_files), self.out)
 
-        self.out.flush()
+        for out, name in zip(open_files, self.tmp_files):
+            out.close()
+            os.remove(name)
 
-        for out, name in zip(self.open_files, self.tmp_files):
-            try:
-                out.close()
-                os.remove(name)
-            except:
-                print("error closing: " + name, flush=True)
-
-    def flush_to_temp(self):
+    def write_to_temp(self):
         self.sortedlist.sort()
         with NamedTemporaryFile(mode="wt", delete=False) as out:
-            lastline = None
-            for line in self.sortedlist:
-                if lastline != line:
-                    out.write(line)
-                lastline = line
+            self.write_to_file(self.sortedlist, out)
 
-            out.flush()
-            return out.name
+        return out.name
+
+    def write_to_file(self, iter_, out):
+        lastline = None
+        for line in iter_:
+            if lastline != line:
+                out.write(line)
+            lastline = line
+
+        out.flush()
 
 
 # ============================================================================

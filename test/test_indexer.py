@@ -226,6 +226,7 @@ org,httpbin)/post?__wb_method=post&another=more^data&test=some+data 202008091953
                 compress=temp_fh,
                 data_out_name="comp_2.cdxj.gz",
                 lines=11,
+                max_sort_buff_size=1000,
                 digest_records=True,
             )
 
