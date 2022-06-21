@@ -394,7 +394,7 @@ class SortingWriter:
             self.sortedlist = []
             self.count = 0
 
-        open_files = [open(name, "rt") for name in self.tmp_files]
+        open_files = [open(name, "rt", encoding="utf-8") for name in self.tmp_files]
 
         self.write_to_file(heapq.merge(*open_files), self.out)
 
