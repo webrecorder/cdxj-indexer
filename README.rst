@@ -4,7 +4,7 @@ CDXJ Indexer
 A command-line tool for generating CDXJ (and  CDX) indexes from WARC and ARC files.
 The indexer is a new tool redesigned for fast and flexible indexing. (Based on the indexing functionality from `pywb <https://github.com/ikreymer/pywb>`_)
 
-Install with ``pip install cdxj-indexer`` or install locally with ``python setup.py install``
+Install with ``pip install cdxj-indexer`` or install locally with ``pip install .`` (or ``pip install -e ".[dev]"`` to install in editable/development mode and include all dev dependencies: black, pytest, ...)
 
 
 The indexer supports classic CDX index format as well as the more flexible CDXJ. With CDXJ, the indexer supports custom fields and ``request`` record access for WARC files. See the examples below and the command line ``-h`` option for latest features. (This is a work in progress).
@@ -42,5 +42,9 @@ More advanced use cases: add additonal http headers as fields. ``http:`` prefix 
 The CDXJ Indexer extends the ``Indexer`` functionality in `warcio <https://github.com/webrecorder/warcio>`_ and should be flexible to extend.
 
 
+Contributing
+~~~~~~~~~~~~~~~~~~~~
 
+Run tests with ``python -m pytest -v --cov=cdxj_indexer --cov-report term-missing``
 
+If you wanna build the sdist/wheel, first install ``build`` package with ``python -m pip install build`` and then run ``python -m build --sdist --wheel``.
