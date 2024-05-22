@@ -10,7 +10,6 @@ except ImportError:  # pragma: no cover
 
 from cdxj_indexer.main import write_cdx_index, main, CDXJIndexer
 
-import pkg_resources
 
 TEST_DIR = os.path.join(os.path.dirname(os.path.realpath(__file__)), "data")
 
