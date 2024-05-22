@@ -12,6 +12,7 @@ import sys
 
 MAX_QUERY_LENGTH = 4096
 
+
 # ============================================================================
 def append_method_query_from_req_resp(req, resp):
     len_ = req.http_headers.get_header("Content-Length")
