@@ -23,6 +23,7 @@ jobs:
           python -m pip install --upgrade ".[dev]"
 
       - name: Style Check
+        if: matrix.python-version == '3.8'
         run: |
           black --check cdxj_indexer/*
           black --check test/*
@@ -33,6 +34,7 @@ jobs:
           python -m pytest -v --cov=cdxj_indexer --cov-report=xml
 
       - name: Upload coverage to Codecov
+        if: matrix.python-version == '3.8'
         uses: codecov/codecov-action@v4
         with:
           verbose: true  
