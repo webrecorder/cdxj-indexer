@@ -42,5 +42,9 @@ More advanced use cases: add additonal http headers as fields. ``http:`` prefix 
 The CDXJ Indexer extends the ``Indexer`` functionality in `warcio <https://github.com/webrecorder/warcio>`_ and should be flexible to extend.
 
 
+Contributing
+~~~~~~~~~~~~~~~~~~~~
 
+Run tests with ``python -m pytest -v --cov=cdxj_indexer --cov-report term-missing``
 
+If you wanna build the sdist/wheel, first install ``build`` package with ``python -m pip install build`` and then run ``python -m build --sdist --wheel``.
