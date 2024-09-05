@@ -30,7 +30,7 @@ CDX Index (11 field):
     com,example)/ 20170730223850 http://example.com/ text/html 200 G7HRM7BGOKSKMSXZAHMUQTTV53QOFSMK - - 1219 771 example-20170730223917.warc.gz
 
 
-More advanced use cases: add additonal http headers as fields. ``http:`` prefix specifies current record headers, while ``req.http:`` specifies corresponding request record headers. The following adds the Date, Referer headers, and the request method to the index:
+More advanced use cases: add additional http headers as fields. ``http:`` prefix specifies current record headers, while ``req.http:`` specifies corresponding request record headers. The following adds the Date, Referer headers, and the request method to the index:
 
 .. code:: console
 
