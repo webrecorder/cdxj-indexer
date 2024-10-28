@@ -51,6 +51,7 @@ setup(
         # temp fix for requests
         "idna<3.0",
         "py3amf",
+        "multipart",
     ],
     zip_safe=True,
     entry_points="""

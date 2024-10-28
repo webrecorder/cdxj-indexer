@@ -1,16 +1,18 @@
-from warcio.utils import to_native_str
+import base64
+import json
+import sys
 
 from urllib.parse import unquote_plus, urlencode
 from io import BytesIO
 
+from multipart import MultipartParser
+from warcio.utils import to_native_str
+
 from cdxj_indexer.amf import amf_parse
 
-import base64
-import cgi
-import json
-import sys
 
 MAX_QUERY_LENGTH = 4096
+
 
 # ============================================================================
 def append_method_query_from_req_resp(req, resp):
@@ -93,25 +95,16 @@ def query_extract(mime, length, stream, url):
             query = handle_binary(query_data)
 
     elif mime.startswith("multipart/"):
-        env = {
-            "REQUEST_METHOD": "POST",
-            "CONTENT_TYPE": mime,
-            "CONTENT_LENGTH": len(query_data),
-        }
-
-        args = dict(fp=BytesIO(query_data), environ=env, keep_blank_values=True)
-
-        args["encoding"] = "utf-8"
-
         try:
-            data = cgi.FieldStorage(**args)
-        except ValueError:
+            boundary = mime.split("boundary=")[1]
+            parser = MultipartParser(BytesIO(query_data), boundary, charset="utf8")
+        except (ValueError, IndexError):
             # Content-Type multipart/form-data may lack "boundary" info
             query = handle_binary(query_data)
         else:
             values = []
-            for item in data.list:
-                values.append((item.name, item.value))
+            for part in parser:
+                values.append((part.name, part.value))
 
             query = urlencode(values, True)
 
