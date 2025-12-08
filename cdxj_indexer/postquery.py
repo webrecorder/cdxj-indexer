@@ -103,7 +103,11 @@ def query_extract(mime, length, stream, url):
         else:
             values = []
             for part in parser:
-                values.append((part.name, part.value))
+                # if the value fails to decode as utf-8 base64 encode it
+                try:
+                    values.append((part.name, part.value))
+                except UnicodeDecodeError:
+                    values.append((part.name, handle_binary(part.raw)))
 
             query = urlencode(values, True)
 
