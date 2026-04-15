@@ -1,0 +1,55 @@
+ [build-system]
+requires = ["setuptools", "setuptools-scm"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "cdxj_indexer"
+version = "1.4.6"
+authors = [
+	{name = "Ilya Kreymer", email = "ikreymer@gmail.com"},
+]
+license = "Apache-2.0"
+description = "CDXJ Indexer for WARC and ARC files"
+readme = "README.rst"
+dependencies = [
+	"warcio",
+	"surt",
+	# temp fix for requests
+	"idna<3.0",
+	"py3amf",
+	"multipart",
+]
+requires-python = ">= 3.5"
+classifiers=[
+    "Development Status :: 4 - Beta",
+    "Environment :: Web Environment",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.5",
+    "Programming Language :: Python :: 3.6",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Utilities",
+]
+
+[dependency-groups]
+dev = [
+	"pytest",
+	"pytest-cov",
+]
+
+[project.urls]
+Repository = "https://github.com/webrecorder/cdxj-indexer"
+
+[project.scripts]
+cdxj-indexer = "cdxj_indexer.main:main"
+
+[tool.pytest.ini_options]
+addopts = [
+    "--doctest-modules",
+    "./cdxj_indexer",
+    "--cov",
+    "cdxj_indexer",
+    "-v",
+    "test/",
+]
