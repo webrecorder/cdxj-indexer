@@ -10,7 +10,6 @@ from warcio.utils import to_native_str
 
 from cdxj_indexer.amf import amf_parse
 
-
 MAX_QUERY_LENGTH = 4096
 
 
