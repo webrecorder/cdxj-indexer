@@ -4,7 +4,6 @@ import tempfile
 
 from cdxj_indexer.postquery import append_method_query_from_req_resp
 
-
 BUFF_SIZE = 1024 * 64
 
 
