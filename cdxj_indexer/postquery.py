@@ -103,7 +103,13 @@ def query_extract(mime, length, stream, url):
         else:
             values = []
             for part in parser:
-                # if the value fails to decode as utf-8 base64 encode it
+                # If the value fails to decode as utf-8 base64 encode it.
+                #
+                # See https://iipc.github.io/warc-specifications/guidelines/cdx-non-get-requests/
+                # 
+                # "The body must be decoded as form data per RFC 2388 and then percent plus encoded. 
+                # If the body is not a valid multipart/form-data message then the binary encoding 
+                # method must be used instead."
                 try:
                     values.append((part.name, part.value))
                 except UnicodeDecodeError:
