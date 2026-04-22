@@ -14,8 +14,6 @@ readme = "README.rst"
 dependencies = [
 	"warcio",
 	"surt",
-	# temp fix for requests
-	"idna<3.0",
 	"py3amf",
 	"multipart",
 ]
