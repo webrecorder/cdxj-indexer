@@ -103,7 +103,44 @@ def query_extract(mime, length, stream, url):
         else:
             values = []
             for part in parser:
-                values.append((part.name, part.value))
+                # A part with a filename is a binary file upload, not a text
+                # field, so hand the raw bytes to urlencode to percent-encode.
+                # This is what the guideline below describes for a *valid*
+                # multipart body -- decode as form data per RFC 2388, then
+                # percent plus encode. The binary fallback further down only
+                # applies to bodies that aren't valid multipart at all, which
+                # a binary file part still is.
+                #
+                # It also matches cgi.FieldStorage, which this parser replaced
+                # and which pywb still uses at replay time: it returns bytes
+                # for file parts and never decodes them. Keeping the two in
+                # step is what makes a POST lookup hit.
+                #
+                # Do not "tidy" this into base64. surt unquotes the query and
+                # re-splits it on & and =, so raw bytes containing those get
+                # hoisted out into separate, alphabetically re-sorted query
+                # params -- the key for a binary body is genuinely garbled,
+                # and two bodies differing only in fragment order can collide.
+                # base64 survives canonicalization intact and looks far
+                # cleaner, but pywb never computes that key, so replay would
+                # silently stop matching. Fixing this properly needs a change
+                # to the guideline (and to pywb) on both sides at once.
+                if part.filename:
+                    values.append((part.name, part.raw))
+                    continue
+
+                # A non-file part that won't decode is malformed form data, so
+                # fall back to base64 for it.
+                #
+                # See https://iipc.github.io/warc-specifications/guidelines/cdx-non-get-requests/
+                #
+                # "The body must be decoded as form data per RFC 2388 and then percent plus encoded.
+                # If the body is not a valid multipart/form-data message then the binary encoding
+                # method must be used instead."
+                try:
+                    values.append((part.name, part.value))
+                except UnicodeDecodeError:
+                    values.append((part.name, handle_binary(part.raw)))
 
             query = urlencode(values, True)
 
