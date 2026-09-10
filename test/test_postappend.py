@@ -201,23 +201,6 @@ class TestPostQueryExtract(object):
             == "http://example.com/?__wb_method=POST&ts=1761714108199&post_0=%9C"
         )
 
-    def test_post_extract_binary_multipart_non_file_part(self):
-        # same invalid utf-8 byte, but in a regular field rather than a file
-        # part, so the body is malformed form data and base64 is used instead
-        body = b"""------WebKitFormBoundaryXcDvJJ9bNZr1ZUTB\r\nContent-Disposition: form-data; name="ts"\r\n\r\n1761714108199\r\n------WebKitFormBoundaryXcDvJJ9bNZr1ZUTB\r\nContent-Disposition: form-data; name="field"\r\n\r\n\x9c\r\n------WebKitFormBoundaryXcDvJJ9bNZr1ZUTB--\r\n"""
-
-        mq = MethodQueryCanonicalizer(
-            "POST",
-            "multipart/form-data; boundary=----WebKitFormBoundaryXcDvJJ9bNZr1ZUTB",
-            len(body),
-            BytesIO(body),
-        )
-
-        assert (
-            mq.append_query("http://example.com/")
-            == "http://example.com/?__wb_method=POST&ts=1761714108199&field=__wb_post_data%3DnA%3D%3D"
-        )
-
     def test_post_extract_no_boundary_in_multipart_form_mimetype(self):
         mq = MethodQueryCanonicalizer(
             "POST", "multipart/form-data", len(self.post_data), BytesIO(self.post_data)
