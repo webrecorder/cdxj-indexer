@@ -182,6 +182,25 @@ class TestPostQueryExtract(object):
             == "http://example.com/?__wb_method=POST&__wb_post_data=gTZsYEygNFAO4HICtYkZAGZQ2w6wAiw="
         )
 
+    def test_post_extract_binary_multipart_data(self):
+        # a file part (it has a filename) whose body contains a chr(0x9C),
+        # which isn't valid utf-8 -- as sent by Facebook's /ajax/bz beacon
+        body = b"""------WebKitFormBoundaryXcDvJJ9bNZr1ZUTB\r\nContent-Disposition: form-data;name="ts"\r\n\r\n1761714108199\r\n------WebKitFormBoundaryXcDvJJ9bNZr1ZUTB\r\nContent-Disposition: form-data; name="post_0"; filename="blob"\r\nContent-Type: application/octet-stream\r\n\r\n\x9c\r\n------WebKitFormBoundaryXcDvJJ9bNZr1ZUTB--\r\n"""
+
+        mq = MethodQueryCanonicalizer(
+            "POST",
+            "multipart/form-data; boundary=----WebKitFormBoundaryXcDvJJ9bNZr1ZUTB",
+            len(body),
+            BytesIO(body),
+        )
+
+        # the raw bytes are percent-encoded, matching what cgi.FieldStorage
+        # (still used by pywb at replay time) produces for a file part
+        assert (
+            mq.append_query("http://example.com/")
+            == "http://example.com/?__wb_method=POST&ts=1761714108199&post_0=%9C"
+        )
+
     def test_post_extract_no_boundary_in_multipart_form_mimetype(self):
         mq = MethodQueryCanonicalizer(
             "POST", "multipart/form-data", len(self.post_data), BytesIO(self.post_data)
