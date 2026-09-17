@@ -106,7 +106,7 @@ def query_extract(mime, length, stream, url):
                 # A part with a filename is a binary file upload, not a text
                 # field, so hand the raw bytes to urlencode to percent-encode.
                 # This follows the guideline for non-GET requests:
-                # https://iipc.github.io/warc-specifications/guidelines/cdx-non-get-requests/
+                # https://specs.webrecorder.net/request-body-canonicalization/latest/
                 if part.filename:
                     values.append((part.name, part.raw))
                 else:
