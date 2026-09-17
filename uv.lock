@@ -774,42 +774,11 @@ wheels = [
 
 [[package]]
 name = "idna"
-version = "3.7"
+version = "3.15"
 source = { registry = "https://pypi.org/simple" }
-resolution-markers = [
-    "python_full_version < '3.6'",
-]
-sdist = { url = "https://files.pythonhosted.org/packages/21/ed/f86a79a07470cb07819390452f178b3bef1d375f2ec021ecfc709fc7cf07/idna-3.7.tar.gz", hash = "sha256:028ff3aadf0609c1fd278d8ea3089299412a7a8b9bd005dd08b9f8285bcb5cfc", size = 189575, upload-time = "2024-04-11T03:34:43.276Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/82/77/7b3966d0b9d1d31a36ddf1746926a11dface89a83409bf1483f0237aa758/idna-3.15.tar.gz", hash = "sha256:ca962446ea538f7092a95e057da437618e886f4d349216d2b1e294abfdb65fdc", size = 199245, upload-time = "2026-05-12T22:45:57.011Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/e5/3e/741d8c82801c347547f8a2a06aa57dbb1992be9e948df2ea0eda2c8b79e8/idna-3.7-py3-none-any.whl", hash = "sha256:82fee1fc78add43492d3a1898bfa6d8a904cc97d8427f683ed8e798d07761aa0", size = 66836, upload-time = "2024-04-11T03:34:41.447Z" },
-]
-
-[[package]]
-name = "idna"
-version = "3.10"
-source = { registry = "https://pypi.org/simple" }
-resolution-markers = [
-    "python_full_version == '3.7.*'",
-    "python_full_version >= '3.6.8' and python_full_version < '3.7'",
-    "python_full_version >= '3.6' and python_full_version < '3.6.8'",
-]
-sdist = { url = "https://files.pythonhosted.org/packages/f1/70/7703c29685631f5a7590aa73f1f1d3fa9a380e654b86af429e0934a32f7d/idna-3.10.tar.gz", hash = "sha256:12f65c9b470abda6dc35cf8e63cc574b1c52b11df2c86030af0ac09b01b13ea9", size = 190490, upload-time = "2024-09-15T18:07:39.745Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/76/c6/c88e154df9c4e1a2a66ccf0005a88dfb2650c1dffb6f5ce603dfbd452ce3/idna-3.10-py3-none-any.whl", hash = "sha256:946d195a0d259cbba61165e88e65941f16e9b36ea6ddb97f00452bae8b1287d3", size = 70442, upload-time = "2024-09-15T18:07:37.964Z" },
-]
-
-[[package]]
-name = "idna"
-version = "3.13"
-source = { registry = "https://pypi.org/simple" }
-resolution-markers = [
-    "python_full_version >= '3.10'",
-    "python_full_version == '3.9.*'",
-    "python_full_version == '3.8.*'",
-]
-sdist = { url = "https://files.pythonhosted.org/packages/ce/cc/762dfb036166873f0059f3b7de4565e1b5bc3d6f28a414c13da27e442f99/idna-3.13.tar.gz", hash = "sha256:585ea8fe5d69b9181ec1afba340451fba6ba764af97026f92a91d4eef164a242", size = 194210, upload-time = "2026-04-22T16:42:42.314Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/5d/13/ad7d7ca3808a898b4612b6fe93cde56b53f3034dcde235acb1f0e1df24c6/idna-3.13-py3-none-any.whl", hash = "sha256:892ea0cde124a99ce773decba204c5552b69c3c67ffd5f232eb7696135bc8bb3", size = 68629, upload-time = "2026-04-22T16:42:40.909Z" },
+    { url = "https://files.pythonhosted.org/packages/d2/23/408243171aa9aaba178d3e2559159c24c1171a641aa83b67bdd3394ead8e/idna-3.15-py3-none-any.whl", hash = "sha256:048adeaf8c2d788c40fee287673ccaa74c24ffd8dcf09ffa555a2fbb59f10ac8", size = 72340, upload-time = "2026-05-12T22:45:55.733Z" },
 ]
 
 [[package]]
@@ -1140,7 +1109,7 @@ source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "certifi" },
     { name = "charset-normalizer" },
-    { name = "idna", version = "3.13", source = { registry = "https://pypi.org/simple" } },
+    { name = "idna" },
     { name = "urllib3" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/34/64/8860370b167a9721e8956ae116825caff829224fbca0ca6e7bf8ddef8430/requests-2.33.0.tar.gz", hash = "sha256:c7ebc5e8b0f21837386ad0e1c8fe8b829fa5f544d8df3b2253bff14ef29d7652", size = 134232, upload-time = "2026-03-25T15:10:41.586Z" }
@@ -1243,7 +1212,8 @@ resolution-markers = [
     "python_full_version < '3.6'",
 ]
 dependencies = [
-    { name = "tldextract", version = "1.7.5", source = { registry = "https://pypi.org/simple" } },
+    { name = "tldextract", version = "1.7.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.8' or python_full_version >= '3.10'" },
+    { name = "tldextract", version = "1.7.5", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.8' and python_full_version < '3.10'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/4c/14/40a50a54c21a7e12071424127ade3459bb701c59d404f84b7f83996d3258/surt-0.2.tar.gz", hash = "sha256:9197e023d0c45e64d96975f8fb24c88443ba4c49e8f7d57ff5adee2240b22a96", size = 10494, upload-time = "2013-08-09T21:41:12.238Z" }
 
@@ -1262,24 +1232,32 @@ sdist = { url = "https://files.pythonhosted.org/packages/47/52/500de6c33a1b92fef
 
 [[package]]
 name = "tldextract"
-version = "1.7.5"
+version = "1.7.2"
 source = { registry = "https://pypi.org/simple" }
 resolution-markers = [
-    "python_full_version == '3.9.*'",
-    "python_full_version == '3.8.*'",
     "python_full_version == '3.7.*'",
     "python_full_version >= '3.6.8' and python_full_version < '3.7'",
     "python_full_version >= '3.6' and python_full_version < '3.6.8'",
     "python_full_version < '3.6'",
 ]
 dependencies = [
-    { name = "idna", version = "3.7", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.6' or python_full_version >= '3.10'" },
-    { name = "idna", version = "3.10", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.6' and python_full_version < '3.8'" },
-    { name = "idna", version = "3.13", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.8' and python_full_version < '3.10'" },
-    { name = "setuptools", version = "50.3.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.6' or python_full_version >= '3.10'" },
+    { name = "setuptools", version = "50.3.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.6' or python_full_version >= '3.8'" },
     { name = "setuptools", version = "59.6.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version == '3.6.*'" },
     { name = "setuptools", version = "68.0.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version == '3.7.*'" },
-    { name = "setuptools", version = "75.3.4", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version == '3.8.*'" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/e1/9c/06309188a419d0a2c5a6fd4b3c16aaadc8d2b93c913c9c2dfd9215dd162b/tldextract-1.7.2.tar.gz", hash = "sha256:1f3ff0531bd74f1abfb7557b434b82e488b5f6b9ffd1cf0e9d97557610327600", size = 63735, upload-time = "2015-11-28T22:16:42.297Z" }
+
+[[package]]
+name = "tldextract"
+version = "1.7.5"
+source = { registry = "https://pypi.org/simple" }
+resolution-markers = [
+    "python_full_version == '3.9.*'",
+    "python_full_version == '3.8.*'",
+]
+dependencies = [
+    { name = "idna" },
+    { name = "setuptools", version = "75.3.4", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version != '3.9.*'" },
     { name = "setuptools", version = "82.0.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version == '3.9.*'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/69/47/19c217e9a8871cc02b7b69181dec3488363ca51ed9f7c985d9e7b0dd1e68/tldextract-1.7.5.tar.gz", hash = "sha256:f01e6fbe872f0e9e5440a811ee33fbc562723dd1b4f239a8e9ef6f717b3392bd", size = 63860, upload-time = "2016-02-07T17:07:57.14Z" }
@@ -1293,7 +1271,7 @@ resolution-markers = [
 ]
 dependencies = [
     { name = "filelock" },
-    { name = "idna", version = "3.13", source = { registry = "https://pypi.org/simple" } },
+    { name = "idna" },
     { name = "requests" },
     { name = "requests-file" },
 ]
