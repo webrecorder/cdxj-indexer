@@ -72,7 +72,7 @@ class CDXJIndexer(Indexer):
         verify_http=False,
         dir_root=None,
         digest_records=False,
-        **kwargs
+        **kwargs,
     ):
 
         if isinstance(inputs, str) or hasattr(inputs, "read"):
