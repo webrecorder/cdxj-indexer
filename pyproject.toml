@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "cdxj_indexer"
-version = "1.4.6"
+version = "1.5.0"
 authors = [
 	{name = "Ilya Kreymer", email = "ikreymer@gmail.com"},
 ]
